@@ -6,7 +6,7 @@
 
 > **Thông điệp chính của ngày 4:** Để xây dựng ứng dụng AI, bạn cần hiểu mô hình nhận dữ liệu gì, xử lý và sinh câu trả lời ra sao, ứng dụng duy trì lịch sử thế nào, và những việc đó tiêu tốn giới hạn cùng chi phí gì.
 
-Tài liệu được biên soạn lại từ toàn bộ bảy file phụ đề SRT, tổng thời lượng theo phụ đề khoảng **64 phút 18 giây**. Đã đối chiếu thêm một số khung hình quan trọng trong video 028, 030 và 031, gồm biểu đồ tham số, cách chia token và code hội thoại. Hai MP4 026 và 032 không truy cập được trong lần xử lý này; nội dung hai bài đó dựa trên phụ đề, chưa đối chiếu hình ảnh.
+Tài liệu được biên soạn lại từ toàn bộ bảy file phụ đề SRT, tổng thời lượng theo phụ đề khoảng **64 phút 18 giây**. Đã đối chiếu thêm các khung hình quan trọng trong video 026, 028, 030, 031 và 032, gồm dòng thời gian Transformer/GPT, biểu đồ tham số, cách chia token, code hội thoại và bảng context/chi phí API. Hai MP4 026 và 032 được bổ sung sau bản đầu; bản hiện tại đã cập nhật nội dung tương ứng từ slide và phụ đề của hai video này.
 
 Đây là bài giảng viết lại, không phải bản dịch từng câu. Các ví dụ về React, backend và chatbot do mình bổ sung. Những phát biểu dễ gây hiểu nhầm trong bài gốc được giải thích lại tại chỗ. Thông số và giá trong video là dữ liệu tại thời điểm ghi hình, không được coi là bảng giá hiện hành.
 
@@ -108,7 +108,53 @@ Bài báo **Attention Is All You Need** năm 2017 trình bày Transformer, dùng
 
 “Dự đoán token tiếp theo” mô tả cơ chế, nhưng không có nghĩa hệ thống chỉ nhìn một vài từ gần nhất. Nó có thể dùng thông tin từ phần ngữ cảnh được cung cấp. Nó cũng không nhất thiết luôn chọn token có xác suất cao nhất; cách lấy mẫu có thể làm kết quả thay đổi.
 
-**Cần nhớ sau video 026:** Transformer là kiến trúc giúp xử lý quan hệ trong chuỗi và huấn luyện hiệu quả ở quy mô lớn. GPT là một dòng model dựa trên kiến trúc đó; chatbot hoàn chỉnh còn có nhiều thành phần bên ngoài model.
+### 2.7. Dòng thời gian trên slide đang muốn kể câu chuyện gì?
+
+Ở khoảng **09:45–11:30**, slide lần lượt hiện các mốc bên dưới. Đây là dòng thời gian được trình bày trong video, không phải danh sách đầy đủ mọi bước tiến của AI.
+
+| Mốc trên slide | Nội dung | Ý nghĩa trong mạch bài |
+| --- | --- | --- |
+| 2017 | Attention Is All You Need, Transformer | Xuất hiện thiết kế kiến trúc được dùng làm nền tảng |
+| 2018 | GPT-1 | Đưa hướng tiền huấn luyện sinh ngôn ngữ vào dòng GPT |
+| 2019 | GPT-2 | Tiếp tục mở rộng khả năng sinh văn bản |
+| 2020 | GPT-3 | Quy mô và năng lực khiến nhiều người chú ý đến tiềm năng ứng dụng |
+| 2022 | RLHF và ChatGPT | Nhấn mạnh bước làm cho model hữu ích trong tương tác với con người |
+| 2023 | GPT-4 | Một thế hệ tiếp theo trong câu chuyện phát triển |
+| 2024 | GPT-4o | Giảng viên liên hệ đến khả năng đa phương thức |
+
+Tên cuối là **GPT-4o**, với chữ “o”; phụ đề nhận dạng thành “4.0” nên dễ gây nhầm. **Multimodal — Đa phương thức** nghĩa là làm việc với nhiều dạng dữ liệu, chẳng hạn văn bản, hình ảnh hoặc âm thanh, tùy khả năng cụ thể của model và giao diện cung cấp.
+
+Điều cần hiểu từ dòng thời gian: chất lượng trợ lý AI không chỉ đến từ việc có một kiến trúc mới. Sau kiến trúc còn là quy mô, dữ liệu và cách huấn luyện để hệ thống đáp ứng người dùng tốt hơn. Các mốc sau 2024 được giảng viên nhắc bằng lời không làm thay đổi thông điệp này.
+
+### 2.8. RLHF — Học tăng cường từ phản hồi của con người là gì?
+
+Slide ghi rõ **RLHF**, trong khi phụ đề đoạn này ghi không rõ thành “ref”. Tên đầy đủ là **Reinforcement Learning from Human Feedback**.
+
+Hãy phân biệt hai mục tiêu:
+
+- **Tiền huấn luyện:** Học nhiều quy luật ngôn ngữ và dữ liệu thông qua một mục tiêu như dự đoán token tiếp theo.
+- **Làm model phù hợp với vai trò trợ lý:** Khuyến khích cách trả lời hữu ích, làm theo yêu cầu và phù hợp với các tiêu chí mong muốn.
+
+Ví dụ minh họa: cùng câu hỏi “Props trong React là gì?”, model có thể tạo một câu trả lời đúng nhưng rất khó hiểu, hoặc một câu rõ ràng, có ví dụ hợp lý. Phản hồi đánh giá của con người có thể được sử dụng trong quá trình huấn luyện để hướng model đến cách trả lời được ưu tiên.
+
+Ở mức nhập môn, RLHF là sử dụng tín hiệu phản hồi đó để tạo mục tiêu tối ưu và tiếp tục điều chỉnh model bằng học tăng cường. Trong quy trình thực tế còn có thể có bước học từ các câu trả lời mẫu; RLHF không phải tên gọi chung cho mọi hình thức tinh chỉnh.
+
+**Mốc “2022 — RLHF and ChatGPT” không có nghĩa RLHF mới được phát minh năm 2022.** Slide đang gắn kỹ thuật với bước phát triển của sản phẩm chat. Nó cũng không có nghĩa bạn bấm thích một câu trả lời thì model đang phục vụ bạn lập tức được huấn luyện lại.
+
+Ngày 4 chỉ giới thiệu vai trò của kỹ thuật này. Bạn chưa cần triển khai RLHF để viết một chatbot dùng model có sẵn.
+
+### 2.9. Vì sao giảng viên nói Transformer là một bước tăng hiệu quả?
+
+Ở phần cuối video, giảng viên muốn tách **mục tiêu dự đoán chuỗi** khỏi **cách thiết kế mạng thực hiện mục tiêu đó**. Transformer là một thiết kế rất hữu ích để mở rộng việc học, nhưng không phải định nghĩa duy nhất của model ngôn ngữ.
+
+Video nhắc hai hướng khác:
+
+- **State-space architectures — Kiến trúc không gian trạng thái:** Nhóm cách thiết kế xử lý chuỗi thông qua một trạng thái được cập nhật.
+- **Hybrid architectures — Kiến trúc lai:** Kết hợp các loại thành phần xử lý khác nhau.
+
+Bạn chỉ cần biết có những hướng thiết kế khác, chưa cần học toán của chúng ở ngày 4. Câu giả định “không có Transformer thì API có thể đắt hơn 10 hoặc 100 lần” trong video là cách giảng viên nhấn mạnh hiệu quả, không phải kết quả đo được để dùng tính chi phí. Tương tự, không nên suy ra rằng một kiến trúc luôn vượt mọi kiến trúc khác trên mọi nhiệm vụ.
+
+**Cần nhớ sau video 026:** Transformer là kiến trúc giúp xử lý quan hệ trong chuỗi và huấn luyện hiệu quả ở quy mô lớn. GPT là một dòng model dựa trên kiến trúc đó; cách huấn luyện bổ sung góp phần tạo khả năng trợ lý, còn chatbot hoàn chỉnh có thêm nhiều thành phần bên ngoài model.
 
 ## 3. Video 027 — Từ LSTM đến trợ lý và Agentic AI
 
@@ -575,6 +621,8 @@ Trong một chatbot, input có thể chứa:
 
 Do đó, **context window không chỉ dành cho câu hỏi bạn vừa gõ**.
 
+**Đọc câu “almost all the output” trên slide (khoảng 01:00–02:30):** Khi chuẩn bị sinh token tiếp theo, những token đã sinh cũng là phần đứng trước nó. Token cuối cùng chưa tồn tại trước khi được sinh, nên giảng viên dùng chữ “gần như toàn bộ đầu ra”. Đây là cách giải thích chuỗi sinh từng bước; khi lập ngân sách API, bạn vẫn cần dành chỗ cho toàn bộ output theo quy định dịch vụ, không tự trừ một token để lách giới hạn. Từ “output prompt” trên slide nên hiểu ở đây là phần đầu ra được sinh, không phải một loại prompt mới bạn phải gửi.
+
 ### 8.2. Tính ngân sách bằng ví dụ cụ thể
 
 Giả sử một model có context window **32.000 token**, dùng như một con số giả định để học:
@@ -705,7 +753,54 @@ Không cần và cũng không nên giả định có thể xem đầy đủ suy 
 
 Không suy ra hóa đơn chính xác chỉ từ số từ trong câu hỏi. Cũng không dùng bảng Vellum hoặc thông số chụp trong video như nguồn giá cố định: khi triển khai, đối chiếu trang của đúng model và nhà cung cấp.
 
-Phần cuối bài 032 giới thiệu những gì sẽ học tiếp như streaming, JSON và giải pháp kinh doanh. Đó là lời dẫn sang ngày sau, không phải những nội dung đã được dạy đầy đủ trong ngày 4.
+### 8.11. Đọc bảng so sánh model xuất hiện trong video
+
+Từ khoảng **06:15–09:15**, giảng viên hiển thị bảng của Vellum. Bảng dưới chép lại các giá trị nhìn thấy trên slide để bạn đối chiếu bài học. **Đây là số liệu trong video, không phải bảng giá hoặc thông số được xác nhận là còn áp dụng hiện nay.** Dấu chấm trong số token phân cách hàng nghìn; dấu phẩy trong giá là phần thập phân.
+
+| Model ghi trên slide | Context window (token) | Input (USD / 1 triệu token) | Output (USD / 1 triệu token) |
+| --- | ---: | ---: | ---: |
+| GPT-5 | 400.000 | 1,25 | 10 |
+| Claude Opus 4.1 | 200.000 | 15 | 75 |
+| GPT oss 20b | 131.072 | 0,08 | 0,35 |
+| GPT oss 120b | 131.072 | 0,15 | 0,60 |
+| Grok 4 | 256.000 | n/a | n/a |
+| Claude 4 Opus | 200.000 | 15 | 75 |
+| Claude 4 Sonnet | 200.000 | 3 | 15 |
+| Gemini 2.5 Flash | 1.000.000 | 0,15 | 0,60 |
+
+**Cách đọc một hàng:** Với hàng GPT-5 trong slide, 400.000 biểu thị ngân sách context được bảng liệt kê. Hai giá 1,25 và 10 ứng với hai loại token khác nhau; không phải phí đăng ký và cũng không phải giá của một tin nhắn.
+
+Ví dụ dùng đúng giá trên slide, giả sử một request có 10.000 input tokens và 1.000 output tokens tính phí, không có khoản khác:
+
+```text
+Phí input  = 10.000 / 1.000.000 × 1,25 = 0,0125 USD
+Phí output =  1.000 / 1.000.000 × 10   = 0,0100 USD
+Tổng                                    0,0225 USD
+```
+
+Giảng viên còn nhắc bằng lời GPT-5 nano với giá input 0,05 USD và output 0,40 USD trên một triệu token. Hàng này không xuất hiện trong bảng chụp trên slide; nó là ví dụ bổ sung bằng lời về các mức chi phí khác nhau.
+
+Những kết luận nên và không nên rút ra từ bảng:
+
+- **Context và giá là hai tiêu chí riêng.** Hai model cùng context 200.000 vẫn có thể có giá khác nhau.
+- **`n/a` là không có giá được cung cấp trong bảng**, không phải giá bằng 0 hay miễn phí.
+- **Các giá GPT oss là giá dịch vụ API được bảng tổng hợp**, không phải phí bắt buộc phải trả theo token nếu tự chạy model trên máy. Slide không nêu rõ nhà cung cấp của từng hàng, nên không dùng bảng này để dự đoán hóa đơn của mọi dịch vụ triển khai cùng model.
+- **Model rẻ hơn chưa chắc hoàn thành nhiệm vụ với tổng chi phí thấp hơn.** Cần tính chất lượng, số lần thử lại, độ dài đầu ra và số bước xử lý; đây là phần bổ sung để áp dụng bảng vào dự án thực.
+- **Không suy ra model nào thông minh nhất chỉ từ bảng này.** Phần đang chiếu chủ yếu giúp so sánh giới hạn và đơn giá, không trình bày một bài kiểm tra chất lượng câu trả lời.
+
+Mục đích đoạn Shakespeare là giúp hình dung độ lớn văn bản. Nếu một triệu token có giá 10 USD, điều đó không có nghĩa model được phép tạo một triệu output tokens trong một request. Vẫn phải xem giới hạn output riêng; số token thực của toàn bộ tác phẩm cũng có thể vượt mức ước lượng. Phát biểu trong video về những model có context cỡ một triệu token cần được hiểu trong bối cảnh lúc ghi hình, không phải danh sách đầy đủ các model ở mọi thời điểm.
+
+### 8.12. Slide cuối: Những gì đã học và những gì sẽ học tiếp
+
+Ở khoảng **10:00 đến hết video**, giảng viên hiển thị slide tiến độ “10%”. Đây là tiến độ theo cách chia khóa học, không có nghĩa bạn đã học 10% toàn bộ lĩnh vực AI.
+
+| Đã được giới thiệu hoặc thực hành đến đây | Hướng sang buổi kế tiếp |
+| --- | --- |
+| Gọi model qua OpenAI hoặc Ollama và tóm tắt nội dung | Sử dụng API tự tin hơn |
+| So sánh các model | One-shot prompting và streaming |
+| Transformer, tokens, context window, API costs | Nhận kết quả Markdown/JSON và xây một giải pháp ứng dụng |
+
+Slide ghi **Ollama**, tên công cụ chạy/phục vụ model; phụ đề nhận dạng thành “a llama” ở đoạn tổng kết. Ollama và Llama không phải cùng một tên: một bên là công cụ, một bên là dòng model. Những nội dung ở cột phải là lời dẫn sang ngày sau, không phải các kỹ năng đã được dạy đầy đủ trong ngày 4.
 
 **Cần nhớ sau video 032:** Ngữ cảnh và chi phí bao gồm nhiều phần ngoài câu hỏi mới. Khi làm ứng dụng, phải quản lý cả độ dài hội thoại, đầu ra, reasoning, công cụ và số lần gọi.
 
@@ -853,6 +948,8 @@ Chưa cần thuộc công thức attention, tự viết Transformer hay nhớ k�
 | 032 | Context Windows, API Costs, and Token Limits in LLMs — Ngữ cảnh, chi phí và giới hạn | 10:48 |
 
 Tên tiếng Anh trong bảng được chuẩn hóa nhẹ từ tên file/phụ đề để dễ đọc. Những lỗi nhận dạng rõ như “tick token”, “a genetic AI” được hiểu theo ngữ cảnh là `tiktoken` và `agentic AI`.
+
+**Đối chiếu video bổ sung 026 và 032:** Đã đọc toàn bộ hai SRT mới; nội dung trùng với hai SRT dùng ở bản đầu. Đã kiểm tra các khung hình trải dọc hai MP4 và đọc rõ các slide chính. Phần cập nhật tập trung vào mục 2.7–2.9 (dòng thời gian, RLHF, kiến trúc thay thế), mục 8.1 (cách diễn đạt về output trên slide), mục 8.11–8.12 (bảng context/giá và tổng kết). Các mốc thời gian là vị trí gần đúng để tìm lại nội dung trong video.
 
 ### Nguồn kỹ thuật bổ sung
 
