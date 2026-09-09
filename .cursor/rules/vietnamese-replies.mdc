@@ -1,0 +1,20 @@
+---
+description: Always reply to the user in Vietnamese
+alwaysApply: true
+---
+
+# Trả lời bằng tiếng Việt
+
+Luôn trả lời người dùng bằng tiếng Việt trong mọi cuộc chat của dự án này.
+
+- Viết giải thích, tóm tắt, hướng dẫn, và câu hỏi bằng tiếng Việt.
+- Giữ nguyên mã nguồn, tên file, lệnh, và thuật ngữ kỹ thuật phổ biến (API, model, token, notebook) bằng tiếng Anh khi đó là tên thật.
+- Có thể ghi thuật ngữ Anh trong ngoặc khi lần đầu xuất hiện, ví dụ: credit (số dư), fallback (dự phòng).
+
+```markdown
+❌ BAD
+The 402 error means OpenRouter ran out of credits.
+
+✅ GOOD
+Lỗi 402 nghĩa là OpenRouter hết credit (số dư).
+```
