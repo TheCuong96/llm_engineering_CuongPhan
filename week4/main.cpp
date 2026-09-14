@@ -1,31 +1,27 @@
-#include <cstdio>
+#include <iostream>
 #include <chrono>
 
-static double calculate(int iterations, int param1, int param2) {
-#if defined(__clang__)
-#pragma clang loop vectorize(disable)
-#pragma clang loop interleave(disable)
-#pragma clang fp reassociate(off)
-#endif
-    volatile double result = 1.0; // Giữ đúng thứ tự phép cộng/trừ như Python
+double calculate(int iterations, int param1, int param2) {
+    double result = 1.0;
     for (int i = 1; i <= iterations; ++i) {
-        int base = i * param1;
-        result -= 1.0 / static_cast<double>(base - param2);
-        result += 1.0 / static_cast<double>(base + param2);
+        int j = i * param1 - param2;
+        result -= 1.0 / j;
+        j = i * param1 + param2;
+        result += 1.0 / j;
     }
-    return result;
+    return result * 4;
 }
 
 int main() {
-    using clock = std::chrono::high_resolution_clock;
-    auto start_time = clock::now();
+    auto start_time = std::chrono::high_resolution_clock::now();
+    double result = calculate(200000000, 4, 1);
+    auto end_time = std::chrono::high_resolution_clock::now();
 
-    double result = calculate(200000000, 4, 1) * 4.0;
+    std::cout.precision(12);
+    std::cout << "Kết quả (Result): " << result << std::endl;
+    std::cout << "Thời gian thực thi (Execution Time): "
+              << std::chrono::duration<double>(end_time - start_time).count()
+              << " giây" << std::endl;
 
-    auto end_time = clock::now();
-    double elapsed = std::chrono::duration<double>(end_time - start_time).count();
-
-    std::printf("Kết quả (Result): %.12f\n", result);
-    std::printf("Thời gian thực thi (Execution Time): %.6f giây\n", elapsed);
     return 0;
 }
