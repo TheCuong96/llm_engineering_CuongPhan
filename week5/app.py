@@ -1,7 +1,7 @@
 import gradio as gr  # Nhập Gradio để xây dựng giao diện trò chuyện trên web.
 from dotenv import load_dotenv  # Nhập hàm đọc các biến môi trường từ tệp .env.
 
-from implementation.answer import answer_question  # Nhập hàm xử lý câu hỏi bằng pipeline RAG.
+from pro_implementation.answer import answer_question  # Nhập hàm xử lý câu hỏi bằng pipeline RAG.
 
 load_dotenv(override=True)  # Nạp lại các biến môi trường, chẳng hạn OPENAI_API_KEY.
 
