@@ -2,7 +2,7 @@ import modal
 from modal import Volume, Image
 # Setup - define our infrastructure with code!
 
-app = modal.App("pricer-service")
+app = modal.App("pricer-service-class")
 image = Image.debian_slim().pip_install(
     "huggingface", "torch", "transformers", "bitsandbytes", "accelerate", "peft"
 )
@@ -14,7 +14,7 @@ secrets = [modal.Secret.from_name("huggingface-secret")]
 GPU = "T4"
 BASE_MODEL = "meta-llama/Llama-3.2-3B"
 PROJECT_NAME = "price"
-HF_USER = "ed-donner"  # your HF name here! Or use mine if you just want to reproduce my results.
+HF_USER = "ed-donner"  # Public adapter repository used by this lab.
 RUN_NAME = "2025-11-28_18.47.07"
 PROJECT_RUN_NAME = f"{PROJECT_NAME}-{RUN_NAME}"
 REVISION = "b19c8bfea3b6ff62237fbb0a8da9779fc12cefbd"
