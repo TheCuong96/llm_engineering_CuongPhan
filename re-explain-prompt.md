@@ -63,7 +63,7 @@ Nếu cần kiểm chứng hành vi phụ thuộc phiên bản thư viện, ưu 
 
 ## 5. Các file cần tạo
 
-Tạo thư mục `learning-vietnamese-claude-sonnet-5/` trong workspace, trừ khi hướng dẫn dự án yêu cầu vị trí khác.
+Tạo thư mục `learning-vietnamese-GPT-5_6-terra/` trong workspace, trừ khi hướng dẫn dự án yêu cầu vị trí khác.
 
 ### `README.md`
 
