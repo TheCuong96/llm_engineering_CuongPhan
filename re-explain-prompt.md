@@ -19,6 +19,7 @@ Trước tiên, hãy:
 5. Xác định kiến thức nền cần bổ sung và đề xuất thứ tự học hợp lý.
 
 Không đọc toàn bộ dữ liệu lớn, model weights, thư mục môi trường hoặc file build. Không đọc hay chép nội dung secrets, API keys, tokens hoặc `.env` vào tài liệu.
+Không đọc các folder có tên community-contributions
 
 Nếu thiếu thông tin, ghi rõ phần chưa xác định. Không tự bịa nội dung khóa học hoặc khẳng định đã đọc những file chưa đọc.
 
@@ -62,7 +63,7 @@ Nếu cần kiểm chứng hành vi phụ thuộc phiên bản thư viện, ưu 
 
 ## 5. Các file cần tạo
 
-Tạo thư mục `learning-vietnamese/` trong workspace, trừ khi hướng dẫn dự án yêu cầu vị trí khác.
+Tạo thư mục `learning-vietnamese-claude-sonnet-5/` trong workspace, trừ khi hướng dẫn dự án yêu cầu vị trí khác.
 
 ### `README.md`
 
