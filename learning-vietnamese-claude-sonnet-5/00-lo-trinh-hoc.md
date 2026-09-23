@@ -21,7 +21,7 @@ Bạn có nền frontend React/JavaScript vững, nhưng khóa học dùng Pytho
 Bạn không cần giỏi Python trước khi học, nhưng nên nhận mặt được các cấu trúc sau (sẽ giải thích lại ngay khi gặp trong Bài 01, không cần học thuộc trước):
 
 | Khái niệm Python | Tương đương gần trong JavaScript |
-|---|---|
+| --- | --- |
 | `import x` / `from x import y` | `import x from '...'` / `import { y } from '...'` |
 | `def ten_ham(tham_so):` | `function tenHam(thamSo) { ... }` |
 | `dict` (`{"key": "value"}`) | Object literal `{ key: 'value' }` |
@@ -63,7 +63,7 @@ Quy ước đánh số: mỗi "Bài" (lesson) trong bộ tài liệu này tươn
 ### Tuần 1 — Nền tảng: gọi API, prompting, so sánh model
 
 | Bài | Chủ đề dự kiến | Nguồn | Trạng thái |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 01 | Gọi API LLM lần đầu & Prompting cơ bản (system/user prompt), web scraping đơn giản, xây "web summarizer" | `week1/day1.ipynb` | **Đã tạo** |
 | 02 | Chat Completions API "dưới nắp ca-pô" (gọi HTTP thô bằng `requests`), endpoint tương thích OpenAI, gọi Ollama/Gemini | `week1/day2.ipynb` | Chưa tạo |
 | 03 | Chưa xác định — không thấy `day3.ipynb` trong `week1/` | Chưa rõ | Chưa khảo sát |
@@ -75,7 +75,7 @@ Quy ước đánh số: mỗi "Bài" (lesson) trong bộ tài liệu này tươn
 ### Tuần 2 → Tuần 8 (khung dự kiến, mức tin cậy thấp — chỉ dựa trên tên thư mục/file)
 
 | Tuần | Chủ đề dự kiến | Ghi chú tin cậy |
-|---|---|---|
+| --- | --- | --- |
 | 2 | Gradio UI, có thể đa phương thức (ảnh/âm thanh), Tools/function calling | Suy luận từ tên thư mục, **chưa đọc notebook** |
 | 3 | Mô hình mã nguồn mở với HuggingFace (pipelines/tokenizers/models) | Suy luận, **chưa đọc notebook** |
 | 4 | Lựa chọn & đánh giá LLM; sinh/chuyển đổi code (Python→C++/Rust) | Suy luận từ tên file ghi chú cũ, **chưa đọc notebook** |

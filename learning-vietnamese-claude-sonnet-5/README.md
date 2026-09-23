@@ -32,7 +32,7 @@ Theo [README.md gốc](../README.md) của repo:
 Bảng dưới đây liệt kê các tuần dựa trên tên thư mục, tên file (notebook + ghi chú có sẵn) và nội dung tôi đã **thực sự đọc**. Cột "Mức độ khảo sát" cho biết độ tin cậy của thông tin.
 
 | Tuần | Chủ đề (dựa trên bằng chứng) | Mức độ khảo sát trong phiên này |
-|---|---|---|
+| --- | --- | --- |
 | 1 | Gọi API frontier model lần đầu, cấu trúc prompt (system/user), web scraping cơ bản bằng `requests` + `BeautifulSoup`, so sánh nhiều model | **Đã đọc kỹ**: `week1/day1.ipynb`, `week1/scraper.py`, `week1/day2.ipynb` (một phần), `week1/week1 EXERCISE.ipynb` |
 | 2 | Chat Completions API sâu hơn, giao diện Gradio, có thể có đa phương thức (ảnh/âm thanh) và Tools/function calling | Chỉ xem **danh sách thư mục** (`day1.ipynb`...`day5.ipynb`, `extra.ipynb`) + tên các file ghi chú tiếng Việt đã có sẵn (`AI-Day-2-007-011...`, `Day-4-015-019...`). Chưa đọc nội dung notebook |
 | 3 | Mô hình mã nguồn mở với HuggingFace (nhiều khả năng: pipelines, tokenizers, models) | Chỉ xem danh sách thư mục + tên file ghi chú cũ. Chưa đọc nội dung notebook |
@@ -51,7 +51,7 @@ Ngoài ra ở thư mục gốc còn có `Danh-Sach-Models-VSCode-Copilot.md` và
 Repo có 14 notebook hướng dẫn nền tảng, dùng cho người mới (rất phù hợp với bạn vì bạn còn yếu Python):
 
 | # | File | Chủ đề (đã xác nhận qua mục lục trong `guides/01_intro.ipynb`) |
-|---|---|---|
+| --- | --- | --- |
 | 1 | `01_intro.ipynb` | Giới thiệu, mục lục các guide |
 | 2 | `02_command_line.ipynb` | Dòng lệnh (command line) |
 | 3 | `03_git_and_github.ipynb` | Git và GitHub |
@@ -84,20 +84,29 @@ Xem chi tiết đầy đủ trong [00-lo-trinh-hoc.md](00-lo-trinh-hoc.md). Tóm
 ## 4. Các bài đã tạo trong bộ tài liệu này
 
 | File | Nội dung | Trạng thái |
-|---|---|---|
+| --- | --- | --- |
 | [00-lo-trinh-hoc.md](00-lo-trinh-hoc.md) | Lộ trình học, kiến thức nền, câu hỏi tự kiểm tra | Đã tạo |
 | [01-goi-api-va-prompt-co-ban-chi-tiet.md](01-goi-api-va-prompt-co-ban-chi-tiet.md) | Bài giảng đầy đủ: gọi API LLM lần đầu + prompting cơ bản (Tuần 1 – Day 1) | Đã tạo |
 | [01-goi-api-va-prompt-co-ban-tom-tat.md](01-goi-api-va-prompt-co-ban-tom-tat.md) | Tóm tắt nhanh của Bài 01 | Đã tạo |
-| [tien-do-hoc.md](tien-do-hoc.md) | Nhật ký tiến độ học tập | Đã tạo (mới khởi tạo, chưa có tiến độ thực tế) |
+| [LLM-Engineering-8-tuan-day-du.md](LLM-Engineering-8-tuan-day-du.md) | Tổng hợp đầy đủ 8 tuần theo nguồn gốc và cách giải thích hướng học | Đã tạo |
+| [LLM-Engineering-8-tuan-tom-tat.md](LLM-Engineering-8-tuan-tom-tat.md) | Tóm tắt nhanh 8 tuần | Đã tạo |
+| [coverage-map.md](coverage-map.md) | Bảng đối chiếu giữa nội dung khóa học và nguồn gốc | Đã tạo |
+| [tien-do-hoc.md](tien-do-hoc.md) | Nhật ký tiến độ học tập | Đã tạo, cần cập nhật bằng phản hồi thực tế từ bạn |
 
-Các bài 02 trở đi (Tuần 1 Day 2 và các tuần sau) sẽ được tạo ở những lượt làm việc tiếp theo, theo đúng tốc độ bạn học thực tế — xem phần "Lộ trình chia theo bài nhỏ" trong `00-lo-trinh-hoc.md`.
+Đọc thứ tự gợi ý:
+
+1. [00-lo-trinh-hoc.md](00-lo-trinh-hoc.md) — lộ trình và mục tiêu
+2. [01-goi-api-va-prompt-co-ban-chi-tiet.md](01-goi-api-va-prompt-co-ban-chi-tiet.md) — học sâu bài đầu tiên
+3. [LLM-Engineering-8-tuan-day-du.md](LLM-Engineering-8-tuan-day-du.md) — đọc tổng hợp 8 tuần khi cần tổng quan
+4. [LLM-Engineering-8-tuan-tom-tat.md](LLM-Engineering-8-tuan-tom-tat.md) — ôn nhanh trước khi làm bài tập
+5. [tien-do-hoc.md](tien-do-hoc.md) — ghi lại tiến độ thực sự đã học
 
 ---
 
 ## 5. Bảng ánh xạ bài học ⇄ nguồn
 
 | Bài | Nguồn chính trong repo | Nguồn phụ |
-|---|---|---|
+| --- | --- | --- |
 | Bài 01 — Gọi API LLM lần đầu & Prompting cơ bản | [week1/day1.ipynb](../week1/day1.ipynb), [week1/scraper.py](../week1/scraper.py) | [week1/week1 EXERCISE.ipynb](../week1/week1%20EXERCISE.ipynb), [setup/SETUP-new.md](../setup/SETUP-new.md), [guides/09_ai_apis_and_ollama.ipynb](../guides/09_ai_apis_and_ollama.ipynb) |
 
 Bảng này sẽ được nối dài dần khi có thêm bài mới.

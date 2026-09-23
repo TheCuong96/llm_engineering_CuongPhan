@@ -3,7 +3,7 @@
 > **Nguồn chính:** [week1/day1.ipynb](../week1/day1.ipynb), [week1/scraper.py](../week1/scraper.py)
 > **Nguồn phụ:** [week1/week1 EXERCISE.ipynb](../week1/week1%20EXERCISE.ipynb), [setup/SETUP-new.md](../setup/SETUP-new.md), [guides/09_ai_apis_and_ollama.ipynb](../guides/09_ai_apis_and_ollama.ipynb)
 
-### Quy ước ký hiệu dùng trong bài này
+## Quy ước ký hiệu dùng trong bài này
 
 - **[Từ nguồn]** — nội dung/code lấy trực tiếp từ notebook hoặc file trong repo.
 - **[Bổ sung]** — giải thích, ví dụ hoặc khái niệm do tôi thêm vào để bạn dễ hiểu hơn, không có sẵn trong khóa học gốc.
@@ -64,6 +64,7 @@ Sau bài này, bạn có thể:
 > "Các model như GPT đã được huấn luyện để nhận instruction theo một cách cụ thể. Chúng kỳ vọng nhận: **System prompt** — cho biết đang thực hiện nhiệm vụ gì và nên dùng giọng điệu nào; **User prompt** — phần mở đầu hội thoại mà chúng cần trả lời."
 
 **[Bổ sung]** Ví dụ đời thường: hình dung bạn thuê một nhân viên trực tổng đài.
+
 - **System prompt** giống như **bản mô tả công việc** bạn đưa cho nhân viên đó trước ca làm: "Bạn là nhân viên hỗ trợ khách hàng, luôn lịch sự, trả lời ngắn gọn." Khách hàng không nhìn thấy bản mô tả công việc này.
 - **User prompt** giống như **câu hỏi cụ thể của một khách hàng** gọi tới: "Đơn hàng của tôi bao giờ tới?"
 
@@ -157,7 +158,7 @@ flowchart TD
 **Kiểu dữ liệu đáng chú ý ở từng bước:**
 
 | Biến | Kiểu dữ liệu | Ghi chú |
-|---|---|---|
+| --- | --- | --- |
 | `url` | `str` | Một chuỗi URL, ví dụ `"https://edwarddonner.com"` |
 | kết quả `fetch_website_contents(url)` | `str` | Chuỗi văn bản thô, **luôn ≤ 2000 ký tự** vì bị cắt bằng `[:2_000]` |
 | `messages_for(website)` | `list[dict[str, str]]` | Danh sách 2 phần tử: 1 system message, 1 user message |
@@ -206,6 +207,7 @@ else:
 
 Giải thích từng nhánh:
 - `load_dotenv(override=True)`: đọc file `.env` ở thư mục gốc project; `override=True` nghĩa là nếu biến đó đã tồn tại sẵn trong môi trường hệ điều hành, giá trị trong `.env` sẽ **ghi đè** lên.
+
 - `if not api_key`: nếu không tìm thấy biến `OPENAI_API_KEY` (giá trị `None` hoặc chuỗi rỗng) → báo chưa có key.
 - `elif not api_key.startswith("sk-proj-")`: kiểm tra tiền tố chuỗi — đây là cách tác giả khóa học nhận diện định dạng key kiểu mới của OpenAI. **[Bổ sung]** Lưu ý: đây là kiểm tra dựa trên quy ước đặt tên key tại thời điểm viết khóa học; nếu OpenAI đổi định dạng key trong tương lai, điều kiện này có thể báo sai dù key vẫn hợp lệ — đây là giới hạn của cách kiểm tra "hardcode tiền tố", không phải lỗi của bạn nếu gặp cảnh báo này.
 - `elif api_key.strip() != api_key`: `strip()` bỏ khoảng trắng đầu/cuối chuỗi; nếu chuỗi sau khi `strip()` khác chuỗi gốc, nghĩa là key có dính khoảng trắng/tab thừa (lỗi hay gặp khi copy-paste).
@@ -427,8 +429,8 @@ Hãy tự điền đầy đủ `system_prompt`, `user_prompt`, `messages`, và (
 
 > Chỉ đọc phần này **sau khi** đã tự làm mục 10 và 11.
 
-<details>
-<summary>Gợi ý cho mục 10 (câu hỏi tự giải thích)</summary>
+## Gợi ý cho mục 10 (câu hỏi tự giải thích)
+
 
 1. System prompt = "luật chơi/vai trò" cố định cho model trong suốt cuộc gọi; User prompt = nội dung/yêu cầu cụ thể thay đổi mỗi lần. Ví dụ khác: system = "Bạn là gia sư Toán cấp 2, giải thích từng bước"; user = "Giải phương trình x + 5 = 12".
 2. Để tránh lộ key khi chia sẻ code (ví dụ đẩy lên GitHub) — file `.env` thường được thêm vào `.gitignore` nên không bị commit; code chỉ đọc key từ biến môi trường lúc chạy, không "in cứng" (hardcode) key vào file nguồn.
@@ -436,25 +438,19 @@ Hãy tự điền đầy đủ `system_prompt`, `user_prompt`, `messages`, và (
 4. Chưa chính xác: gọi API là **inference** (dùng model có sẵn), không phải **training** (chỉnh sửa tham số bên trong model). Không có tham số nào của GPT bị thay đổi khi bạn gọi API.
 5. Ví dụ: (a) trang web dạng Single Page Application dùng React/Vue mà nội dung được JavaScript render sau khi tải trang (HTML gốc gần như rỗng); (b) trang có cơ chế chống bot kiểu CloudFront, trả về lỗi 403 khi phát hiện request không giống trình duyệt thật.
 
-</details>
+## Gợi ý cho Bài 11.1 (dự đoán kết quả)
 
-<details>
-<summary>Gợi ý cho Bài 11.1 (dự đoán kết quả)</summary>
 
 (a) Nhiều khả năng output chỉ là `"YES"` hoặc `"NO"` (hoặc rất gần như vậy) vì `system_prompt` yêu cầu rõ chỉ trả lời 1 trong 2 từ đó — nhưng LLM **không đảm bảo tuyệt đối 100%** sẽ tuân theo định dạng, đôi khi vẫn thêm chữ thừa.
 (b) Không đảm bảo giống hệt nhau ở mọi lần chạy — nội dung ý nghĩa (YES/NO) thường ổn định vì câu hỏi có tính sự kiện rõ ràng, nhưng cách trình bày (có thêm dấu chấm, viết hoa/thường...) có thể khác nhau giữa các lần gọi.
 
-</details>
+## Gợi ý cho Bài 11.2 (thay đổi code)
 
-<details>
-<summary>Gợi ý cho Bài 11.2 (thay đổi code)</summary>
 
 Không có "đáp án" cố định vì kết quả phụ thuộc website bạn chọn và lần gọi API thực tế. Điều cần quan sát: model **thường** tuân theo yêu cầu ngôn ngữ trong system prompt khá tốt, nhưng không phải lúc nào cũng giữ được **toàn bộ** sắc thái "snarky" khi chuyển ngôn ngữ — đây là điểm bạn tự ghi nhận qua quan sát thực tế, không suy đoán trước.
 
-</details>
+## Gợi ý cho Bài 11.3 (vận dụng)
 
-<details>
-<summary>Gợi ý cho Bài 11.3 (vận dụng)</summary>
 
 Khung gợi ý:
 
@@ -470,7 +466,7 @@ messages = [
 ]
 ```
 
-</details>
+
 
 ---
 
@@ -489,6 +485,7 @@ messages = [
 ## 14. Nguồn tham khảo và những điểm chưa kiểm chứng
 
 **Nguồn đã đọc trực tiếp trong phiên này:**
+
 - [week1/day1.ipynb](../week1/day1.ipynb) — toàn bộ nội dung notebook.
 - [week1/scraper.py](../week1/scraper.py) — toàn bộ file.
 - [week1/week1 EXERCISE.ipynb](../week1/week1%20EXERCISE.ipynb) — đọc để biết bài tập cuối tuần (chưa phải nội dung Bài 01, sẽ dùng lại ở bài sau).
@@ -497,6 +494,7 @@ messages = [
 - Nội dung thật của `https://edwarddonner.com` — lấy qua công cụ đọc trang web của tôi (không phải qua `scraper.py`), dùng để dựng ví dụ ở mục 6.7.
 
 **Những điểm chưa kiểm chứng / giới hạn cần biết:**
+
 - Tôi **không tự gọi OpenAI API** trong phiên này (tránh phát sinh chi phí thay bạn) — mọi output của `summarize()`/`display_summary()` trong bài là **dự đoán minh hoạ**, không phải kết quả đã chạy thật.
 - Notebook `day1.ipynb` không có output đã lưu sẵn để tôi đối chiếu khi đọc file.
 - Tôi chưa xác nhận được các model `gpt-5-nano`, `gpt-4.1-nano`, `gpt-4.1-mini` có còn khả dụng ở thời điểm bạn thực hành hay không — đây là các tên model xuất hiện trong code tại thời điểm khảo sát (2026-09-22); nếu lỗi "model not found", hãy kiểm tra tài liệu/dashboard chính thức của OpenAI.

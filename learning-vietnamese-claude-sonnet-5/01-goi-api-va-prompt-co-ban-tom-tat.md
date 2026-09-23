@@ -12,7 +12,7 @@
 ## Thuật ngữ quan trọng
 
 | Thuật ngữ | Nghĩa ngắn gọn |
-|---|---|
+| --- | --- |
 | LLM (Large Language Model) | Mô hình đã học cách dự đoán văn bản tiếp theo hợp lý, từ lượng lớn dữ liệu văn bản |
 | Frontier model | Nhóm model AI mạnh/hiện đại nhất tại một thời điểm (GPT, Claude, Gemini...) |
 | System prompt | "Vai trò/luật chơi" cố định đưa cho model, người dùng cuối không thấy |
@@ -61,4 +61,4 @@ def summarize(url):
 4. Kể 2 loại website khiến cách scraping trong bài này thất bại.
 5. API key nên đặt ở đâu, và vì sao không nên hardcode trong code?
 
-*(Chưa trả lời được câu nào → quay lại đọc phần tương ứng trong bản chi tiết trước khi làm bài tập.)*
+Chưa trả lời được câu nào → quay lại đọc phần tương ứng trong bản chi tiết trước khi làm bài tập.

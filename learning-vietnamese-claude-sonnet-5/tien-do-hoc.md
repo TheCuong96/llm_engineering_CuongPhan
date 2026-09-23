@@ -7,7 +7,7 @@
 ## 1. Tài liệu đã tạo
 
 | Ngày | File | Nội dung |
-|---|---|---|
+| --- | --- | --- |
 | 2026-09-22 | `README.md` | Tổng quan khóa học, bảng chủ đề theo tuần, bảng ánh xạ bài học ⇄ nguồn |
 | 2026-09-22 | `00-lo-trinh-hoc.md` | Kiến thức nền cần bổ sung, lộ trình theo bài nhỏ, tiêu chí hiểu, câu hỏi tự kiểm tra |
 | 2026-09-22 | `tien-do-hoc.md` | File này |
@@ -18,21 +18,27 @@
 
 ## 2. Những bài người học đã thực sự học
 
-*(Chưa có dữ liệu — đây là lượt khởi tạo tài liệu đầu tiên. Bạn chưa xác nhận đã đọc/hiểu bài nào.)*
+### Hiện chưa có dữ liệu xác nhận từ bạn về việc đã đọc/hiểu bài nào
+
+Đây là trạng thái dựa trên thực tế đã kiểm tra: tài liệu được tạo, nhưng không có minh chứng bạn đã làm bài tập hoặc trả lời câu hỏi.
 
 Khi bạn đọc xong và trả lời được các câu hỏi tự giải thích/bài tập trong một bài, hãy báo lại (ví dụ: "mình đã đọc xong Bài 01, đây là câu trả lời của mình cho phần câu hỏi tự giải thích: ..."), mục này sẽ được cập nhật với ngày và mức độ hiểu thực tế.
+
+> Tình trạng hiện tại: đã có bộ tài liệu và tổng hợp 8 tuần, nhưng chưa xác nhận bạn đã hoàn thành bất kỳ bài nào bằng phản hồi thực tế.
 
 ---
 
 ## 3. Những việc người học đã tự làm được (dựa trên phản hồi/bài làm thực tế)
 
-*(Chưa có dữ liệu.)*
+### Chưa có dữ liệu
 
 ---
 
 ## 4. Những điểm còn vướng
 
-*(Chưa có dữ liệu — chưa bắt đầu học nên chưa xác định được điểm vướng cụ thể.)*
+### Chưa có dữ liệu xác nhận từ bạn
+
+Vì chưa bắt đầu hoặc chưa báo lại tiến độ cụ thể.
 
 Gợi ý: khi bạn gặp khó ở đâu (một khái niệm, một đoạn code, một lỗi khi chạy thử), hãy ghi lại càng cụ thể càng tốt (tên bài, tên khái niệm, thông báo lỗi nếu có) để mục này phản ánh đúng thực tế thay vì chung chung.
 
