@@ -1505,7 +1505,303 @@ Tài liệu bên ngoài và model/runtime thay đổi theo thời gian; trước
 
 ---
 
-## 26. Kết luận cuối
+## 26. Yêu cầu chức năng và phi chức năng
+
+### 26.1. User stories cốt lõi
+
+| ID | User story | Acceptance criteria rút gọn |
+|---|---|---|
+| US-01 | Là người dùng, tôi muốn chọn một workspace | Root được canonicalize; app không tự mở workspace khác |
+| US-02 | Tôi muốn hỏi về kiến trúc repo | Câu trả lời có file/dòng/symbol nguồn |
+| US-03 | Tôi muốn biết model đã nhận context gì | Context inspector hiện nguồn và phần bị truncate |
+| US-04 | Tôi muốn AI lập kế hoạch nhưng chưa sửa code | Plan mode không có write/command capability |
+| US-05 | Tôi muốn AI đề xuất sửa bug | App tạo unified diff hợp lệ, chưa ghi trước approval |
+| US-06 | Tôi muốn duyệt từng phần thay đổi | Có accept/reject theo file hoặc hunk |
+| US-07 | Tôi muốn giữ thay đổi đang làm dở | Dirty changes được phân biệt và không bị overwrite |
+| US-08 | Tôi muốn AI chạy test | Command/cwd/risk hiển thị trước; output stream và có Stop |
+| US-09 | Tôi muốn biết kết quả đã được xác minh chưa | Final summary ghi rõ pass/fail/not run |
+| US-10 | Tôi muốn hoàn tác patch của agent | Undo chỉ chạy khi precondition an toàn |
+| US-11 | Tôi muốn tiếp tục phiên sau khi mở lại app | Session, run và artifacts được phục hồi |
+| US-12 | Tôi muốn làm việc offline | Không có outbound request ngoài local runtime |
+| US-13 | Tôi muốn dùng cloud khi chủ động chọn | Badge và outbound policy đổi rõ; không auto-fallback |
+| US-14 | Tôi muốn xóa lịch sử/index | Xóa app data theo lựa chọn mà không xóa workspace |
+
+### 26.2. Yêu cầu phi chức năng
+
+| Nhóm | Yêu cầu V1 | Cách xác minh |
+|---|---|---|
+| Safety | Không side effect ngoài capability đã cấp | Security/integration tests |
+| Privacy | Offline profile không egress | Network capture trong E2E |
+| Integrity | Không partial multi-file write | Fault injection |
+| Reliability | Run có state rõ sau crash/cancel | Recovery tests |
+| Performance | Search/context không chặn UI | p95 benchmark theo corpus |
+| Usability | Approval giải thích được tác động | User test + E2E |
+| Auditability | Mỗi tool/approval/patch truy vết được | Event log query |
+| Portability | V1 hỗ trợ chính thức Windows | Clean-VM matrix |
+| Maintainability | Protocol/tool/model có contract tests | CI gate |
+| Accessibility | Keyboard, focus, contrast cơ bản | Manual + automated audit |
+| Upgradeability | Migration có backup/rollback | Upgrade E2E |
+| Observability | Lỗi có category/run id, log đã redact | Fault tests |
+
+Không đặt latency tuyệt đối giống nhau cho mọi máy local. Báo cáo performance phải kèm CPU, GPU, RAM, model, quantization, context length và repository size.
+
+### 26.3. Error taxonomy
+
+Core nên chuyển lỗi thành nhóm ổn định để UI xử lý:
+
+- `model_unavailable`;
+- `model_context_overflow`;
+- `model_protocol_error`;
+- `workspace_boundary_violation`;
+- `secret_policy_violation`;
+- `approval_denied` hoặc `approval_expired`;
+- `patch_conflict` hoặc `patch_invalid`;
+- `tool_timeout`;
+- `tool_cancelled`;
+- `tool_nonzero_exit`;
+- `sandbox_violation`;
+- `persistence_error`;
+- `protocol_version_mismatch`;
+- `budget_exceeded`;
+- `internal_error`.
+
+Mỗi lỗi có `code`, thông điệp cho người dùng, chi tiết kỹ thuật đã scrub, retryability và hành động đề xuất.
+
+---
+
+## 27. Data contracts mẫu
+
+Đây là thiết kế contract, không phải code production cuối cùng.
+
+### 27.1. Tool request
+
+```json
+{
+  "schema_version": 1,
+  "tool_call_id": "tc_01",
+  "run_id": "run_01",
+  "tool": "read_file",
+  "arguments": {
+    "path": "src/auth/service.py",
+    "start_line": 1,
+    "end_line": 160
+  },
+  "expected_capability": "workspace.read"
+}
+```
+
+### 27.2. Policy decision
+
+```json
+{
+  "tool_call_id": "tc_01",
+  "decision": "allow",
+  "risk": "low",
+  "matched_rule": "workspace-read",
+  "canonical_scope": {
+    "workspace_id": "ws_01",
+    "path": "src/auth/service.py"
+  }
+}
+```
+
+### 27.3. Approval request
+
+```json
+{
+  "approval_id": "ap_01",
+  "run_id": "run_01",
+  "tool_call_id": "tc_09",
+  "kind": "file_patch",
+  "risk": "medium",
+  "summary": "Sửa 2 file để xử lý refresh token hết hạn",
+  "files": [
+    "src/auth/service.py",
+    "tests/test_auth.py"
+  ],
+  "artifact_ref": "artifact://patches/p_01.diff",
+  "allowed_decisions": [
+    "deny",
+    "allow_once",
+    "allow_for_run"
+  ],
+  "expires_at": "2026-09-28T15:30:00+07:00"
+}
+```
+
+### 27.4. Tool result
+
+```json
+{
+  "tool_call_id": "tc_12",
+  "status": "completed",
+  "exit_code": 0,
+  "duration_ms": 2180,
+  "stdout_preview": "18 passed in 1.72s",
+  "stderr_preview": "",
+  "truncated": false,
+  "artifact_refs": [],
+  "workspace_changes": []
+}
+```
+
+### 27.5. Final run summary
+
+```json
+{
+  "run_id": "run_01",
+  "status": "completed",
+  "summary": "Đã sửa xử lý refresh token và bổ sung regression test.",
+  "changed_files": [
+    "src/auth/service.py",
+    "tests/test_auth.py"
+  ],
+  "verification": [
+    {
+      "command": ["pytest", "tests/test_auth.py"],
+      "status": "passed",
+      "evidence": "18 passed in 1.72s"
+    }
+  ],
+  "unverified": [],
+  "warnings": []
+}
+```
+
+Contract phải được sinh/validate từ một schema nguồn duy nhất để Python và TypeScript không lệch nhau.
+
+---
+
+## 28. Phần cứng, chi phí, privacy và license
+
+### 28.1. Kiểm tra phần cứng trước khi chốt model
+
+Thu thập tự động nhưng chỉ gửi local:
+
+- OS/build và kiến trúc CPU;
+- RAM khả dụng;
+- GPU, VRAM và runtime hỗ trợ;
+- dung lượng đĩa cho model/index/artifacts;
+- Ollama health và model đã cài;
+- benchmark warm/cold start;
+- tokens/giây theo context nhỏ và trung bình.
+
+Không suy từ tên GPU rằng model chắc chắn chạy tốt; benchmark thật là nguồn quyết định.
+
+### 28.2. Budget lưu trữ
+
+| Dữ liệu | Chính sách gợi ý |
+|---|---|
+| SQLite | Backup trước migration, vacuum có kiểm soát |
+| Model | Do Ollama/runtime quản lý; không copy vào app data |
+| Code index | Có thể rebuild; có nút clear |
+| Tool artifacts | Retention theo ngày/dung lượng |
+| Patch/checkpoint | Giữ lâu hơn cho tới khi user xóa session |
+| Logs | Rotate, cap dung lượng, redact |
+| Diagnostic export | Chỉ tạo khi user yêu cầu |
+
+### 28.3. Chi phí
+
+- Offline/local: không có chi phí theo token, nhưng có chi phí phần cứng, điện và thời gian.
+- Cloud: hiển thị ước lượng usage/cost nếu provider cung cấp dữ liệu; không hardcode bảng giá lâu dài.
+- Index local: tính dung lượng và thời gian cập nhật.
+- Code signing và phân phối: có thể phát sinh phí ngoài chi phí phát triển.
+- Không mua GPU hoặc dịch vụ trước khi benchmark chứng minh model nhỏ hiện tại không đủ.
+
+### 28.4. Privacy policy tối thiểu
+
+Tài liệu privacy phải trả lời rõ:
+
+1. Dữ liệu nào được lưu local?
+2. Dữ liệu nào có thể gửi lên cloud và khi nào?
+3. Có telemetry không, mặc định thế nào?
+4. Log/artifact giữ bao lâu?
+5. Cách xóa session/index/log/key?
+6. Secret được bảo vệ ra sao?
+7. Plugin/provider bên thứ ba có chính sách riêng gì?
+
+### 28.5. License và thương hiệu
+
+- Kiểm tra license của model trước khi phân phối hoặc dùng thương mại.
+- Kiểm tra license của Monaco, xterm, Tauri, embedding model và mọi thư viện đóng gói.
+- Không bundle weight/model nếu license hoặc dung lượng không phù hợp.
+- Giữ attribution/NOTICE theo yêu cầu dependency.
+- Không dùng tên, logo hoặc mô tả khiến người dùng hiểu sản phẩm là Codex, Claude hay Cursor chính thức.
+- Nếu dùng code tham khảo từ community contributions, kiểm tra license/provenance trước khi đưa vào sản phẩm.
+
+---
+
+## 29. Cách quản lý dự án triển khai
+
+### 29.1. Epics đề xuất
+
+```text
+EPIC-01 Product scope & evals
+EPIC-02 Model gateway
+EPIC-03 Workspace & context
+EPIC-04 Agent runtime
+EPIC-05 Policy & approvals
+EPIC-06 Patch & Git safety
+EPIC-07 Command sandbox
+EPIC-08 Persistence & recovery
+EPIC-09 Desktop UX
+EPIC-10 Security & privacy
+EPIC-11 Packaging & release
+```
+
+Mỗi ticket phải có: mục tiêu người dùng, scope, non-scope, acceptance tests, security impact, telemetry/privacy impact và rollback plan nếu có migration.
+
+### 29.2. Branch và review policy
+
+- Branch nhỏ theo feature; tránh một branch kéo dài nhiều tuần.
+- Mọi thay đổi policy/path/patch/process cần review đặc biệt.
+- Không merge nếu test mới không có cho bug/security fix.
+- Database/protocol change phải kèm migration/compatibility test.
+- Prompt thay đổi phải chạy golden eval như code thay đổi.
+- Model mặc định thay đổi phải có báo cáo regression.
+
+### 29.3. CI gates
+
+Theo thứ tự nhanh đến chậm:
+
+1. Format/lint/typecheck.
+2. Unit tests.
+3. Protocol/schema compatibility.
+4. Integration tests với temp Git repos.
+5. Security fixtures.
+6. UI/E2E critical paths.
+7. Golden eval rút gọn.
+8. Nightly/full eval, soak và clean-VM packaging.
+
+Test dùng model thật không được là gate duy nhất vì khó tái lập. Fake/scripted model phải bao phủ state machine; live-model eval là lớp bổ sung.
+
+### 29.4. ADR bắt buộc
+
+- Vì sao chọn standalone app thay vì VS Code extension.
+- Vì sao chọn Tauri/Python sidecar.
+- Vì sao dùng `stdio` thay loopback network.
+- Ranh giới giữa core và tool runner.
+- Default offline/cloud policy.
+- Patch/undo model.
+- Sandbox claim trên Windows.
+- Event-sourced persistence.
+- Retrieval strategy và tiêu chí giữ/bỏ vector RAG.
+- Model support/capability policy.
+
+### 29.5. Stop/go gate sau mỗi mốc
+
+Sau mỗi milestone, trả lời bốn câu:
+
+1. Workflow người dùng có tốt hơn theo metric không?
+2. Có tạo thêm risk chưa được kiểm soát không?
+3. Kiến trúc hiện tại còn đơn giản nhất có thể không?
+4. Có nên tiếp tục, sửa nền móng hay cắt feature?
+
+Không đi từ read-only sang write nếu boundary tests chưa xanh; không đi từ patch sang command nếu recovery chưa rõ; không phát hành desktop nếu core chỉ hoạt động trong notebook.
+
+---
+
+## 30. Kết luận cuối
 
 Khóa học này đủ tốt để bạn bắt đầu xây **bộ não AI** của một coding assistant: model gateway, prompting, streaming, RAG, tool calling, structured output, memory, eval và agent loop. Phần cần đầu tư thêm nhiều nhất không phải huấn luyện model, mà là **product engineering và safety**: workspace boundary, patch/diff, Git, process runner, approval, sandbox, persistence, crash recovery và desktop UX.
 
