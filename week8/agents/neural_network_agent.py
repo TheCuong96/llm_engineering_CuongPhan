@@ -1,5 +1,9 @@
+import os
 from agents.agent import Agent
 from agents.deep_neural_network import DeepNeuralNetworkInference
+
+WEIGHTS_FILENAME = "deep_neural_network.pth"
+WEIGHTS_DOWNLOAD_URL = "https://drive.google.com/drive/folders/1uq5C9edPIZ1973dArZiEO-VE13F7m8MK?usp=drive_link"
 
 
 class NeuralNetworkAgent(Agent):
@@ -14,7 +18,15 @@ class NeuralNetworkAgent(Agent):
         self.log("Neural Network Agent is initializing")
         self.neural_network = DeepNeuralNetworkInference()
         self.neural_network.setup()
-        self.neural_network.load("deep_neural_network.pth")
+        weights_path = os.path.join(os.path.dirname(__file__), "..", WEIGHTS_FILENAME)
+        if not os.path.isfile(WEIGHTS_FILENAME) and not os.path.isfile(weights_path):
+            raise FileNotFoundError(
+                f"Khong tim thay file trong so '{WEIGHTS_FILENAME}'. "
+                f"Day la file trong so da huan luyen san (khong nam trong repo git). "
+                f"Hay tai ve tu {WEIGHTS_DOWNLOAD_URL} va dat vao thu muc 'week8' "
+                f"(cung cap voi day5.ipynb) roi chay lai."
+            )
+        self.neural_network.load(WEIGHTS_FILENAME)
         self.log("Neural Network Agent is ready and weights are loaded")
 
     def price(self, description: str) -> float:
