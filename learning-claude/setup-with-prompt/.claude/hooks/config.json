@@ -1,0 +1,8 @@
+{
+  "protectedBranches": ["main", "master", "develop", "production"],
+  "extraProtectedPaths": [],
+  "allowPaths": [],
+  "disabledRules": [],
+  "postEdit": { "format": true, "lint": true, "areaChecks": true, "timeoutSec": 90 },
+  "stop": { "typecheck": true, "ruff": true, "secrets": true, "timeoutSec": 150 }
+}
