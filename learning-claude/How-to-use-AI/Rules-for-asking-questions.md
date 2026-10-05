@@ -19,6 +19,16 @@
 
 Claude đọc cấu trúc dự án, các tệp liên quan, bài kiểm thử và tài liệu. Không cần đọc mọi thứ; mục tiêu là xác định **thay đổi nằm ở đâu và phụ thuộc vào những gì**. Có thể dùng Plan mode hoặc subagent Explore khi chỉ cần phác họa codebase.
 
+Phải trả lời các câu hỏi này khi khảo sát khi phát triển tính năng:
+
+- Xác định mong muốn: thêm tính năng gì, bỏ hoặc thay đổi cái gì...
+- Làm ở đâu trong dự án nào hoặc trong phần nào của dự án
+- Tính năng hoặc chức năng đó phù hợp với model LLM nào làm là tốt  nhất
+- có cần note hoặc ghi chú lại các docx.
+- có muốn làm theo lộ trình hoặc tài liệu nào đã được setup sẵn hay không
+- có cần kết nối với MCP nào không.
+
+
 **Ví dụ yêu cầu:**
 
 ```text
@@ -26,10 +36,47 @@ Khảo sát pipeline tải ảnh. Xác định điểm thích hợp để chuy�
 dependency đang dùng và test liên quan. Chỉ đọc và báo cáo, chưa sửa mã.
 ```
 
+Mẫu prompt:
+
+```text
+Hãy khảo sát luồng thanh toán và lập kế hoạch tách logic tính thuế
+thành một module riêng. Chỉ đọc, chưa sửa mã.
+
+Kế hoạch phải nêu:
+- tệp sẽ thay đổi;
+- interface trước và sau;
+- test cần thêm hoặc cập nhật;
+- rủi ro tương thích;
+- tiêu chí hoàn thành có thể kiểm tra.
+```
+Phải trả lời các câu hỏi này khi khảo sát khi sửa lỗi:
+
+- Tìm nguyên nhân của lỗi và đề xuất cách sửa: lỗi là lỗi gì có thể là lỗi business hoặc lỗi do code hoặc lỗi từ framework hoặc lỗi vì thiếu tính năng
+
+
+### Ví dụ thực tế
+
+Thay vì hỏi chung chung:
+
+```text
+Sửa phần đăng nhập.
+```
+
+Hãy mô tả mục tiêu và tiêu chí hoàn thành:
+
+```text
+Tìm nguyên nhân người dùng bị đăng xuất sau khi tải lại trang.
+Trước tiên hãy lần theo luồng tạo và lưu session, chưa sửa mã.
+Sau đó đề xuất kế hoạch. Thành công khi test session hiện có vượt qua
+và có thêm test tái hiện lỗi tải lại trang.
+```
+
 ### Plan — Lập kế hoạch
 
 Một kế hoạch tốt cần nêu rõ:
 
+- Xác định mong muốn: thêm tính năng gì, bỏ hoặc thay đổi cái gì...
+- Lộ trình thực hiện: ví dụ tạo interface trước -> setup state -> sử dụng ở đâu.
 - Các tệp dự kiến sửa.
 - Trình tự thực hiện.
 - Rủi ro và trường hợp biên.
@@ -68,6 +115,30 @@ Quy trình không kết thúc chỉ vì AI thông báo đã xong. Thay đổi ch
 4. **Ràng buộc:** Có cần theo pattern, framework, style hoặc yêu cầu tương thích nào không? Có được thêm dependency không?
 5. **Tiêu chí thành công:** Cần chạy test/build nào? Hành vi nào phải hoạt động?
 6. **Mức tự chủ:** Chỉ phân tích, lập kế hoạch hay được phép thực hiện?
+
+### Ví dụ thêm tính năng dark mode
+
+Yêu cầu không chỉ là “thêm dark mode”, mà cần nói vị trí công tắc, phạm vi toàn ứng dụng và yêu cầu màu tương phản dựa trên theme sáng hiện có. Trong Plan mode, Claude tìm cấu trúc theme, hỏi điều chưa rõ và đưa ra kế hoạch. Bạn duyệt kế hoạch trước khi cho phép thực thi.
+
+Mẫu prompt Việt hóa:
+
+```text
+Ứng dụng cần dark mode trên toàn bộ giao diện.
+Hãy đặt công tắc chuyển theme ở header và tìm bảng màu tối có độ tương phản
+phù hợp với theme sáng hiện tại. Trước tiên dùng Plan mode để khảo sát cách
+ứng dụng đang quản lý theme, liệt kê các tệp sẽ sửa và cách kiểm thử.
+Chưa viết mã cho đến khi tôi duyệt kế hoạch.
+```
+
+### Cách phản hồi một kế hoạch chưa tốt
+
+Đừng nói “làm lại”. Hãy chỉ ra phần cần sửa:
+
+```text
+Giữ nguyên bước 1 và 2. Ở bước 3, không thêm dependency mới;
+hãy tận dụng CSS variables hiện có. Bổ sung kiểm thử cho việc lưu lựa chọn
+theme sau khi tải lại trang.
+```
 
 ## 4. Cách phản hồi một kế hoạch chưa tốt
 
