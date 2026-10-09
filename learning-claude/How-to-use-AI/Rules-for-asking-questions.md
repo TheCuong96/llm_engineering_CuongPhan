@@ -5,6 +5,7 @@
 
 - Tạo `CLAUDE.md`, skill tại `skill/skill.md` và hook phù hợp với dự án.
 - Nhờ AI soạn prompt lập kế hoạch cho yêu cầu, sau đó đọc lại để xác nhận kế hoạch đúng với mục tiêu trước khi triển khai.
+## 1.1 Tạo plan đề xuất tạo .claude thông qua lệnh plugin của anthropic: `/claude-code-setup:claude-automation-recommender`
 
 ## 2. Quy trình làm việc cốt lõi
 
