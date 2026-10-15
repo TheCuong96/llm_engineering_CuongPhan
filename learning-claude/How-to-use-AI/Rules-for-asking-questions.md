@@ -15,9 +15,9 @@ Chạy lệnh sau để AI phân tích codebase và đề xuất hook, subagent,
 
 ## 2. Quy trình làm việc cốt lõi
 
-> **Requirements → Explore → Diagram → Design → Kanban → Telegram → Plan → Code → Commit**
+> **Requirements → Explore → Diagram → Design → Kanban → Telegram → Plan → Code → Docs → Commit**
 
-Quy trình gốc của khóa học là **Explore → Plan → Code → Commit**. Bắt đầu viết mã ngay thường dẫn đến nhiều vòng sửa sai; khảo sát và lập kế hoạch trước giúp giảm chi phí về sau. Ở đây bổ sung thêm năm bước: thu thập yêu cầu trước khi khảo sát; vẽ diagram và design để thống nhất hướng đi bằng hình ảnh; đưa toàn bộ kết quả lên thẻ Kanban; rồi kết nối Telegram để giao việc và nhận thông báo từ xa trước khi lập kế hoạch.
+Quy trình gốc của khóa học là **Explore → Plan → Code → Commit**. Bắt đầu viết mã ngay thường dẫn đến nhiều vòng sửa sai; khảo sát và lập kế hoạch trước giúp giảm chi phí về sau. Ở đây bổ sung thêm sáu bước: thu thập yêu cầu trước khi khảo sát; vẽ diagram và design để thống nhất hướng đi bằng hình ảnh; đưa toàn bộ kết quả lên thẻ Kanban; kết nối Telegram để giao việc và nhận thông báo từ xa trước khi lập kế hoạch; và sau khi code xong thì cập nhật tài liệu cấu trúc, sơ đồ, luồng logic cho khớp với code thực tế.
 
 - Bài gốc: [Claude Code 101 — Explore, plan, code, commit](https://anthropic.skilljar.com/claude-code-101/469792)
 - Video: [The explore → plan → code → commit workflow](https://www.youtube.com/watch?v=xJQuF02NAK8)
@@ -297,7 +297,36 @@ Sau khi duyệt kế hoạch, Claude triển khai theo từng bước. Để gia
 
 Nếu một lỗi lặp lại do quy ước dự án, hãy ghi quy ước vào `CLAUDE.md` thay vì sửa thủ công trong mọi phiên.
 
-### 2.9 Commit — Rà soát và đóng gói thay đổi
+### 2.9 Docs — Cập nhật cấu trúc, sơ đồ, luồng logic của source code
+
+> **Code đã đổi thì tài liệu cũng phải đổi theo, trong cùng một commit hoặc PR.**
+
+Khi triển khai, code thực tế thường lệch một chút so với diagram và kế hoạch ban đầu. Nếu không cập nhật lại, tài liệu sẽ sai dần, và ở phiên sau AI đọc tài liệu sai sẽ khảo sát và lập kế hoạch sai theo.
+
+Cần rà soát và cập nhật:
+
+- **Cấu trúc source code:** thư mục, module, tệp mới thêm hoặc đã xóa, và vai trò của từng phần (ví dụ trong `README.md` hoặc `docs/ARCHITECTURE.md`).
+- **Sơ đồ:** cập nhật các diagram ở bước 2.3 (ví dụ `docs/diagrams/export-report.md`) theo đúng luồng đã code, bỏ phần "hiện tại" cũ nếu không còn đúng.
+- **Luồng logic:** mô tả ngắn luồng xử lý chính, điều kiện rẽ nhánh, cách xử lý lỗi và các trường hợp biên đã xử lý.
+- **Interface:** API, tham số, format dữ liệu vào và ra nếu có thay đổi.
+- **`CLAUDE.md`:** nếu có quy ước mới (lệnh build, test, cách đặt tên...), ghi lại để AI dùng ở các phiên sau.
+- **Thẻ Kanban:** gắn link tới tài liệu đã cập nhật.
+
+**Mẫu prompt:**
+
+```text
+Code cho thẻ "Xuất báo cáo doanh thu ra Excel" đã xong.
+So sánh code thực tế với docs/diagrams/export-report.md và kế hoạch đã duyệt.
+Cập nhật lại:
+- cấu trúc thư mục và vai trò các module mới trong docs/ARCHITECTURE.md;
+- sequence diagram theo đúng luồng đã code;
+- mô tả luồng logic, cách xử lý lỗi và trường hợp biên.
+Liệt kê những chỗ code khác với kế hoạch ban đầu. Không sửa code.
+```
+
+Danh sách "những chỗ khác với kế hoạch" rất đáng đọc: nó cho biết AI đã tự quyết định những gì trong lúc code, để bạn xác nhận hoặc yêu cầu sửa trước khi commit.
+
+### 2.10 Commit — Rà soát và đóng gói thay đổi
 
 Trước khi commit:
 
