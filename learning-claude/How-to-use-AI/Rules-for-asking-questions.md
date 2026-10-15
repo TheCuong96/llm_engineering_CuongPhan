@@ -13,58 +13,16 @@ Chạy lệnh sau để AI phân tích codebase và đề xuất hook, subagent,
 /claude-code-setup:claude-automation-recommender
 ```
 
-## 2. Tạo và kết nối Kanban
+## 2. Quy trình làm việc cốt lõi
 
-> **Mỗi yêu cầu là một thẻ trên bảng Kanban trước khi bắt đầu Explore.**
+> **Requirements → Explore → Diagram → Design → Kanban → Plan → Code → Commit**
 
-Bảng Kanban giúp theo dõi tiến độ, tránh làm nhiều việc cùng lúc và cho AI một nguồn ngữ cảnh thống nhất về task: mục tiêu, tiêu chí hoàn thành, nhánh và PR liên quan.
-
-### 2.1 Tạo bảng
-
-- Chọn công cụ: GitHub Projects, Jira, Linear, Trello...
-- Tạo các cột cơ bản: `Backlog` → `To do` → `In progress` → `Review` → `Done`.
-- Giới hạn số thẻ trong `In progress` (ví dụ tối đa 2) để tập trung hoàn thành từng việc.
-
-### 2.2 Kết nối bảng với AI
-
-- Kết nối qua MCP để AI đọc và cập nhật thẻ, ví dụ với GitHub:
-
-  ```text
-  claude mcp add --transport http github https://api.githubcopilot.com/mcp/
-  ```
-
-- Hoặc dùng CLI có sẵn, ví dụ `gh project` cho GitHub Projects.
-- Ghi vào `CLAUDE.md` bảng nào đang dùng và quy ước đặt tên thẻ, nhánh (ví dụ nhánh `feature/<mã-thẻ>-<mô-tả-ngắn>`).
-
-### 2.3 Nội dung một thẻ
-
-Mỗi thẻ nên trả lời được:
-
-- Mục tiêu: thêm, bỏ hoặc thay đổi cái gì.
-- Phạm vi: dự án hoặc phần nào của dự án.
-- Tiêu chí hoàn thành có thể kiểm tra.
-- Liên kết: nhánh, PR, tài liệu hoặc issue liên quan.
-
-**Ví dụ yêu cầu:**
-
-```text
-Đọc thẻ "Chuyển ảnh sang WebP" trên bảng Kanban của dự án.
-Chuyển thẻ sang In progress, tạo nhánh theo quy ước trong CLAUDE.md,
-sau đó bắt đầu bước thu thập yêu cầu. Chưa sửa mã.
-```
-
-Khi làm xong từng giai đoạn của quy trình ở mục 3, cập nhật trạng thái thẻ tương ứng: bắt đầu thu thập yêu cầu → `In progress`, mở PR → `Review`, merge → `Done`. Gắn link diagram và design vào thẻ ngay khi có.
-
-## 3. Quy trình làm việc cốt lõi
-
-> **Requirements → Explore → Diagram → Design → Plan → Code → Commit**
-
-Quy trình gốc của khóa học là **Explore → Plan → Code → Commit**. Bắt đầu viết mã ngay thường dẫn đến nhiều vòng sửa sai; khảo sát và lập kế hoạch trước giúp giảm chi phí về sau. Ở đây bổ sung thêm ba bước: thu thập yêu cầu trước khi khảo sát, sau đó vẽ diagram và design để thống nhất hướng đi bằng hình ảnh trước khi lập kế hoạch.
+Quy trình gốc của khóa học là **Explore → Plan → Code → Commit**. Bắt đầu viết mã ngay thường dẫn đến nhiều vòng sửa sai; khảo sát và lập kế hoạch trước giúp giảm chi phí về sau. Ở đây bổ sung thêm bốn bước: thu thập yêu cầu trước khi khảo sát; vẽ diagram và design để thống nhất hướng đi bằng hình ảnh; sau đó đưa toàn bộ kết quả lên thẻ Kanban trước khi lập kế hoạch.
 
 - Bài gốc: [Claude Code 101 — Explore, plan, code, commit](https://anthropic.skilljar.com/claude-code-101/469792)
 - Video: [The explore → plan → code → commit workflow](https://www.youtube.com/watch?v=xJQuF02NAK8)
 
-### 3.1 Requirements — Thu thập yêu cầu
+### 2.1 Requirements — Thu thập yêu cầu
 
 Trước khi để AI đọc code, cần làm rõ **vấn đề cần giải quyết** và **thế nào là xong**. Yêu cầu mơ hồ ở bước này sẽ khiến mọi bước sau đi sai hướng.
 
@@ -86,10 +44,10 @@ Tôi muốn thêm tính năng xuất báo cáo doanh thu ra Excel.
 Đừng khảo sát code vội. Hãy hỏi tôi từng câu một để làm rõ: ai dùng,
 dữ liệu nào cần xuất, phạm vi không làm, ràng buộc và tiêu chí chấp nhận.
 Khi đủ thông tin, tóm tắt thành danh sách yêu cầu để tôi duyệt
-và cập nhật vào thẻ Kanban.
+và lưu vào docs/requirements/export-report.md.
 ```
 
-### 3.2 Explore — Khảo sát
+### 2.2 Explore — Khảo sát
 
 Claude đọc cấu trúc dự án, các tệp liên quan, bài kiểm thử và tài liệu. Không cần đọc mọi thứ; mục tiêu là xác định **thay đổi nằm ở đâu và phụ thuộc vào những gì**. Có thể dùng Plan mode hoặc subagent Explore khi chỉ cần phác họa codebase.
 
@@ -147,7 +105,7 @@ Sau đó đề xuất kế hoạch. Thành công khi test session hiện có vư
 và có thêm test tái hiện lỗi tải lại trang.
 ```
 
-### 3.3 Diagram — Tạo và vẽ sơ đồ
+### 2.3 Diagram — Tạo và vẽ sơ đồ
 
 Sau khi khảo sát, vẽ lại luồng hiện tại và luồng sau khi thay đổi. Sơ đồ giúp phát hiện sớm chỗ hiểu sai giữa bạn và AI mà đọc văn bản dài khó thấy.
 
@@ -192,7 +150,7 @@ sequenceDiagram
 
 Đọc lại sơ đồ và sửa ngay nếu sai. Sửa sơ đồ rẻ hơn rất nhiều so với sửa code.
 
-### 3.4 Design — Tạo và vẽ thiết kế
+### 2.4 Design — Tạo và vẽ thiết kế
 
 Khi thay đổi có giao diện, cần có design trước khi lập kế hoạch code. Với tác vụ không có giao diện (API, script, refactor), thay bằng bản thiết kế kỹ thuật ngắn: interface, cấu trúc dữ liệu, format request/response.
 
@@ -211,21 +169,66 @@ Công cụ gợi ý:
 **Mẫu prompt:**
 
 ```text
-Dựa trên yêu cầu ở thẻ Kanban và sơ đồ docs/diagrams/export-report.md,
+Dựa trên docs/requirements/export-report.md và sơ đồ docs/diagrams/export-report.md,
 đề xuất design cho nút "Xuất Excel" trên trang báo cáo doanh thu.
 Dùng component và màu có sẵn trong dự án. Thể hiện đủ trạng thái
 mặc định, đang xuất, lỗi và thành công. Tạo prototype HTML để tôi xem trước.
 Chưa sửa mã của ứng dụng.
 ```
 
-Chỉ chuyển sang Plan sau khi bạn đã duyệt design.
+Chỉ chuyển sang bước tiếp theo sau khi bạn đã duyệt design.
 
-### 3.5 Plan — Lập kế hoạch
+### 2.5 Kanban — Tạo và kết nối bảng công việc
+
+> **Mỗi yêu cầu đã duyệt là một thẻ trên bảng Kanban trước khi bắt đầu Plan.**
+
+Đến bước này đã có đủ yêu cầu, sơ đồ và design. Bảng Kanban gom tất cả vào một chỗ, giúp theo dõi tiến độ, tránh làm nhiều việc cùng lúc và cho AI một nguồn ngữ cảnh thống nhất ở các phiên sau.
+
+#### Tạo bảng
+
+- Chọn công cụ: GitHub Projects, Jira, Linear, Trello...
+- Tạo các cột cơ bản: `Backlog` → `To do` → `In progress` → `Review` → `Done`.
+- Giới hạn số thẻ trong `In progress` (ví dụ tối đa 2) để tập trung hoàn thành từng việc.
+
+#### Kết nối bảng với AI
+
+- Kết nối qua MCP để AI đọc và cập nhật thẻ, ví dụ với GitHub:
+
+  ```text
+  claude mcp add --transport http github https://api.githubcopilot.com/mcp/
+  ```
+
+- Hoặc dùng CLI có sẵn, ví dụ `gh project` cho GitHub Projects.
+- Ghi vào `CLAUDE.md` bảng nào đang dùng và quy ước đặt tên thẻ, nhánh (ví dụ nhánh `feature/<mã-thẻ>-<mô-tả-ngắn>`).
+
+#### Nội dung một thẻ
+
+Mỗi thẻ nên trả lời được:
+
+- Mục tiêu: thêm, bỏ hoặc thay đổi cái gì.
+- Phạm vi: dự án hoặc phần nào của dự án.
+- Tiêu chí hoàn thành có thể kiểm tra.
+- Liên kết: tài liệu yêu cầu, diagram, design, nhánh, PR hoặc issue liên quan.
+
+Nếu tính năng lớn, tách thành nhiều thẻ nhỏ, mỗi thẻ có thể hoàn thành và review độc lập.
+
+**Ví dụ yêu cầu:**
+
+```text
+Tạo thẻ "Xuất báo cáo doanh thu ra Excel" trên bảng Kanban của dự án
+từ docs/requirements/export-report.md. Gắn link sơ đồ
+docs/diagrams/export-report.md và prototype design đã duyệt.
+Đặt thẻ ở cột To do. Chưa sửa mã.
+```
+
+Khi làm xong từng giai đoạn tiếp theo, cập nhật trạng thái thẻ tương ứng: tạo thẻ → `To do`, bắt đầu Plan → `In progress` và tạo nhánh theo quy ước, mở PR → `Review`, merge → `Done`.
+
+### 2.6 Plan — Lập kế hoạch
 
 Một kế hoạch tốt cần nêu rõ:
 
 - Mong muốn: thêm tính năng gì, bỏ hoặc thay đổi cái gì.
-- Bám theo yêu cầu, diagram và design đã duyệt ở các bước trước.
+- Bám theo yêu cầu, diagram và design đã gắn trên thẻ Kanban.
 - Lộ trình thực hiện, ví dụ: tạo interface trước → setup state → sử dụng ở đâu.
 - Các tệp dự kiến sửa.
 - Trình tự thực hiện.
@@ -235,7 +238,7 @@ Một kế hoạch tốt cần nêu rõ:
 
 Đây là thời điểm ít tốn kém nhất để điều chỉnh hướng đi. Nếu kế hoạch đụng đến quá nhiều tệp hoặc thêm dependency không cần thiết, hãy thu hẹp phạm vi trước khi triển khai.
 
-### 3.6 Code — Thực thi có kiểm chứng
+### 2.7 Code — Thực thi có kiểm chứng
 
 Sau khi duyệt kế hoạch, Claude triển khai theo từng bước. Để giai đoạn này ổn định:
 
@@ -245,7 +248,7 @@ Sau khi duyệt kế hoạch, Claude triển khai theo từng bước. Để gia
 
 Nếu một lỗi lặp lại do quy ước dự án, hãy ghi quy ước vào `CLAUDE.md` thay vì sửa thủ công trong mọi phiên.
 
-### 3.7 Commit — Rà soát và đóng gói thay đổi
+### 2.8 Commit — Rà soát và đóng gói thay đổi
 
 Trước khi commit:
 
@@ -257,7 +260,7 @@ Trước khi commit:
 
 Quy trình không kết thúc chỉ vì AI thông báo đã xong. Thay đổi chỉ nên được xem là hoàn tất sau khi đã qua rà soát của con người và các bước kiểm chứng.
 
-## 4. Một prompt rõ ràng cần có gì?
+## 3. Một prompt rõ ràng cần có gì?
 
 1. **Mục tiêu:** Bạn muốn hoàn thành việc gì?
 2. **Ngữ cảnh:** Khu vực hoặc luồng nào liên quan? Dự án dùng công nghệ gì?
@@ -280,7 +283,7 @@ phù hợp với theme sáng hiện tại. Trước tiên dùng Plan mode để 
 Chưa viết mã cho đến khi tôi duyệt kế hoạch.
 ```
 
-## 5. Cách phản hồi một kế hoạch chưa tốt
+## 4. Cách phản hồi một kế hoạch chưa tốt
 
 Đừng chỉ nói “làm lại”. Hãy chỉ rõ phần cần thay đổi và phần cần giữ nguyên.
 
@@ -292,7 +295,7 @@ hãy tận dụng CSS variables hiện có. Bổ sung kiểm thử cho việc l�
 theme sau khi tải lại trang.
 ```
 
-## 6. Kiểm tra trước khi push
+## 5. Kiểm tra trước khi push
 
 Sau khi hoàn thành thay đổi:
 
@@ -301,7 +304,7 @@ Sau khi hoàn thành thay đổi:
 - [ ] Đối chiếu phạm vi thay đổi với yêu cầu và tiêu chí trên thẻ Kanban; xác nhận không sửa ngoài phạm vi.
 - [ ] Sau khi kiểm tra xong, push lên một nhánh riêng cho task. Nhánh này có thể xóa khi không còn cần thiết.
 
-## 7. Rà soát lại sau khi push lên GitHub
+## 6. Rà soát lại sau khi push lên GitHub
 
 1. Nhờ AI trên web kiểm tra code vừa push và nắm ngữ cảnh codebase.
 2. Nếu AI phát hiện vấn đề, yêu cầu viết prompt cụ thể để sửa vấn đề đó.
