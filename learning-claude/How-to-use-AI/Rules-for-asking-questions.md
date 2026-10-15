@@ -15,9 +15,9 @@ Chạy lệnh sau để AI phân tích codebase và đề xuất hook, subagent,
 
 ## 2. Quy trình làm việc cốt lõi
 
-> **Requirements → Explore → Diagram → Design → Kanban → Plan → Code → Commit**
+> **Requirements → Explore → Diagram → Design → Kanban → Telegram → Plan → Code → Commit**
 
-Quy trình gốc của khóa học là **Explore → Plan → Code → Commit**. Bắt đầu viết mã ngay thường dẫn đến nhiều vòng sửa sai; khảo sát và lập kế hoạch trước giúp giảm chi phí về sau. Ở đây bổ sung thêm bốn bước: thu thập yêu cầu trước khi khảo sát; vẽ diagram và design để thống nhất hướng đi bằng hình ảnh; sau đó đưa toàn bộ kết quả lên thẻ Kanban trước khi lập kế hoạch.
+Quy trình gốc của khóa học là **Explore → Plan → Code → Commit**. Bắt đầu viết mã ngay thường dẫn đến nhiều vòng sửa sai; khảo sát và lập kế hoạch trước giúp giảm chi phí về sau. Ở đây bổ sung thêm năm bước: thu thập yêu cầu trước khi khảo sát; vẽ diagram và design để thống nhất hướng đi bằng hình ảnh; đưa toàn bộ kết quả lên thẻ Kanban; rồi kết nối Telegram để giao việc và nhận thông báo từ xa trước khi lập kế hoạch.
 
 - Bài gốc: [Claude Code 101 — Explore, plan, code, commit](https://anthropic.skilljar.com/claude-code-101/469792)
 - Video: [The explore → plan → code → commit workflow](https://www.youtube.com/watch?v=xJQuF02NAK8)
@@ -223,7 +223,56 @@ docs/diagrams/export-report.md và prototype design đã duyệt.
 
 Khi làm xong từng giai đoạn tiếp theo, cập nhật trạng thái thẻ tương ứng: tạo thẻ → `To do`, bắt đầu Plan → `In progress` và tạo nhánh theo quy ước, mở PR → `Review`, merge → `Done`.
 
-### 2.6 Plan — Lập kế hoạch
+### 2.6 Telegram — Giao việc và nhận thông báo từ xa
+
+> **Không cần ngồi trước máy: giao việc, duyệt kế hoạch và xem tiến độ qua Telegram.**
+
+Sau khi có thẻ Kanban, các bước Plan → Code → Commit có thể chạy lâu. Kết nối Telegram giúp bạn nhắn việc cho AI từ điện thoại và nhận thông báo khi AI cần duyệt hoặc đã làm xong, thay vì phải theo dõi terminal liên tục.
+
+#### Thiết lập kết nối
+
+1. Mở Telegram, chat với **@BotFather**, gửi `/newbot` để tạo bot và lấy **bot token**.
+2. Cài plugin Telegram cho Claude Code, sau đó chạy lệnh cấu hình và dán token vào:
+
+   ```text
+   /telegram:configure
+   ```
+
+3. Nhắn thử một tin cho bot, rồi duyệt ghép nối (pairing) và giới hạn chỉ tài khoản của bạn được ra lệnh:
+
+   ```text
+   /telegram:access
+   ```
+
+4. Ghi vào `CLAUDE.md` những loại sự kiện cần báo qua Telegram để AI làm theo ở mọi phiên.
+
+#### Giao việc qua Telegram
+
+Nhắn cho bot giống như gõ prompt trong terminal, vẫn theo nguyên tắc ở mục 3: rõ mục tiêu, phạm vi và mức tự chủ.
+
+**Ví dụ tin nhắn:**
+
+```text
+Đọc thẻ "Xuất báo cáo doanh thu ra Excel" trên Kanban.
+Chuyển thẻ sang In progress và lập kế hoạch theo mục 2.7.
+Gửi kế hoạch qua đây để tôi duyệt. Chưa sửa mã.
+```
+
+#### Thông báo nên nhận
+
+- Kế hoạch đã sẵn sàng, đang chờ bạn duyệt.
+- AI cần quyết định hoặc cấp quyền để tiếp tục.
+- Test, lint hoặc build bị lỗi.
+- Đã mở PR, thẻ chuyển sang `Review`.
+- Task hoàn tất, kèm tóm tắt ngắn những gì đã thay đổi.
+
+#### Lưu ý bảo mật
+
+- Bot token như mật khẩu: không commit vào repo, không gửi cho người khác.
+- Chỉ cho phép tài khoản của bạn (allowlist) ra lệnh. Ai nhắn được cho bot là có thể điều khiển AI trên máy bạn.
+- Việc quan trọng như push, merge, xóa dữ liệu vẫn nên duyệt rõ ràng, không để AI tự làm chỉ vì có một tin nhắn yêu cầu.
+
+### 2.7 Plan — Lập kế hoạch
 
 Một kế hoạch tốt cần nêu rõ:
 
@@ -238,7 +287,7 @@ Một kế hoạch tốt cần nêu rõ:
 
 Đây là thời điểm ít tốn kém nhất để điều chỉnh hướng đi. Nếu kế hoạch đụng đến quá nhiều tệp hoặc thêm dependency không cần thiết, hãy thu hẹp phạm vi trước khi triển khai.
 
-### 2.7 Code — Thực thi có kiểm chứng
+### 2.8 Code — Thực thi có kiểm chứng
 
 Sau khi duyệt kế hoạch, Claude triển khai theo từng bước. Để giai đoạn này ổn định:
 
@@ -248,7 +297,7 @@ Sau khi duyệt kế hoạch, Claude triển khai theo từng bước. Để gia
 
 Nếu một lỗi lặp lại do quy ước dự án, hãy ghi quy ước vào `CLAUDE.md` thay vì sửa thủ công trong mọi phiên.
 
-### 2.8 Commit — Rà soát và đóng gói thay đổi
+### 2.9 Commit — Rà soát và đóng gói thay đổi
 
 Trước khi commit:
 
