@@ -1,0 +1,698 @@
+
+Introduction to Model Context Protocol, Giảng lại bằng tiếng Việt.
+Khóa học: Anthropic Academy, Giảng viên: Stephen Grider.
+Ngày biên soạn và đối chiếu: 15/10/2026.
+Trang khóa học: Introduction to Model Context Protocol.
+Tài liệu này giải thích lại khóa học theo đúng thứ tự 14 mục, với ví dụ xuyên suốt là một chatbot quản lý tài liệu. Mỗi bài kỹ thuật có phần giải thích, thao tác, kết quả mong đợi và điểm dễ nhầm. Bạn có thể vừa đọc vừa làm trong trình soạn thảo mã nguồn và terminal.
+Cách biên soạn: đã truy cập từng mục trong khóa học, đọc phần nội dung văn bản của các bài, đọc phụ đề của bài chào mừng và bài thiết lập dự án, tải và đối chiếu bộ mã nguồn cli_project_COMPLETE.zip. Đây là bản diễn giải và hướng dẫn thực hành, không phải bản chép lời hay bản mô tả từng khung hình video. Các ví dụ tiếng Việt, bài tự luyện và chương trình thực hành độc lập ở cuối là phần bổ sung của người biên soạn.
+Hai mục không phải bài giảng kỹ thuật là khảo sát và bài đánh giá. Khảo sát có 3 câu; bài đánh giá có 7 câu. Đã đọc câu đầu của bài đánh giá; các câu sau yêu cầu trả lời câu trước nên không được truy cập bằng cách làm bài thay người học. Phần 13 ghi rõ giới hạn này và cung cấp câu hỏi tự luyện riêng.
+
+Mục lục.
+1. Welcome to the course, Chuẩn bị học.
+2. Introducing MCP, MCP giải quyết việc gì?
+3. MCP clients, Hiểu đường đi của một yêu cầu.
+4. Project setup, Thiết lập dự án.
+5. Defining tools with MCP, Tạo công cụ.
+6. The server inspector, Kiểm tra server.
+7. Course satisfaction survey, Khảo sát.
+8. Implementing a client, Viết client.
+9. Defining resources, Cung cấp dữ liệu.
+10. Accessing resources, Đọc và đính kèm dữ liệu.
+11. Defining prompts, Tạo mẫu hướng dẫn.
+12. Prompts in the client, Dùng mẫu từ client.
+13. Final assessment on MCP, Ôn để làm đánh giá.
+14. MCP review, Chọn đúng thành phần.
+Sau 14 mục: bài thực hành độc lập, xử lý lỗi, bảng tra nhanh, nguồn và kiểm chứng.
+
+Bức tranh chung trước khi học.
+Giả sử bạn muốn hỏi chatbot: “Trong report.pdf có gì? Hãy sửa chiều cao từ 20m thành 25m.” Mô hình không tự có quyền mở tài liệu của bạn. Ứng dụng phải cung cấp cách lấy dữ liệu và thực hiện thao tác.
+MCP, viết đầy đủ là Model Context Protocol, quy định cách ứng dụng AI và các server cung cấp dữ liệu/công cụ trao đổi với nhau. Bạn vẫn cần quyền truy cập dịch vụ đích, logic nghiệp vụ và một ứng dụng điều phối; MCP chuẩn hóa phần kết nối.
+Hình dung một văn phòng:
+Thành phần: Người dùng; Ví von: Người giao việc; Trách nhiệm trong dự án: Đặt câu hỏi, chọn tài liệu, chọn quy trình.
+Thành phần: Host / ứng dụng AI; Ví von: Văn phòng điều phối; Trách nhiệm trong dự án: Quản lý hội thoại, gọi Claude, xử lý yêu cầu sử dụng công cụ.
+Thành phần: MCP client; Ví von: Nhân viên liên lạc; Trách nhiệm trong dự án: Kết nối và gửi yêu cầu đúng giao thức tới MCP server.
+Thành phần: MCP server; Ví von: Quầy dịch vụ chuyên môn; Trách nhiệm trong dự án: Công bố công cụ, dữ liệu và mẫu hướng dẫn.
+Thành phần: Claude / mô hình; Ví von: Người suy luận; Trách nhiệm trong dự án: Hiểu yêu cầu, đề xuất gọi tool, tổng hợp câu trả lời.
+Thành phần: Dịch vụ hoặc kho dữ liệu; Ví von: Nơi giữ hồ sơ thật; Trách nhiệm trong dự án: GitHub, cơ sở dữ liệu, hệ thống tài liệu…
+Trong khóa học, ứng dụng điều phối cũng có lúc được gọi là “your server”. Đừng nhầm nó với MCP server: một bên phục vụ ứng dụng chat, một bên cung cấp khả năng qua MCP. Ở dự án mẫu, ứng dụng điều phối là CLI chạy trên máy của bạn, không cần triển khai web server.
+
+Lưu ý phiên bản để làm theo được.
+Khóa học dùng API Python SDK nhánh 1.x: FastMCP, ClientSession, stdio_client. File uv.lock trong bộ mã nguồn đã tải khóa mcp tại 1.26.0. Phần thực hành độc lập của tài liệu cũng dùng bản này.
+Tài liệu chính thức hiện tại đã có SDK v2 và ví dụ dùng tên API khác, chẳng hạn MCPServer và Client. Vì vậy, khi theo khóa học, hãy dùng môi trường/lockfile đi kèm hoặc phiên bản chỉ định trong hướng dẫn này. Không trộn tùy ý ví dụ 1.x với ví dụ v2. Nguồn đối chiếu phiên bản hiện tại: Python SDK chính thức.
+
+1. Welcome to the course, Chuẩn bị học.
+Mở bài gốc.
+
+Bài này muốn bạn hiểu gì?
+Bạn sẽ lần lượt học vấn đề MCP giải quyết, vai trò client/server và ba thành phần cơ bản mà server cung cấp:
+Tools: những việc mô hình có thể đề xuất thực hiện.
+Resources: dữ liệu mà ứng dụng có thể đọc.
+Prompts: mẫu thông điệp/hướng dẫn có tham số để người dùng kích hoạt.
+Điều kiện đầu vào là biết Python cơ bản và có Python trên máy. Bạn nên hiểu hàm, từ điển, import, kiểu dữ liệu và ngoại lệ. Với async def, hãy hiểu đơn giản rằng hàm có thể tạm nhường trong khi chờ I/O; await chờ kết quả của một thao tác bất đồng bộ.
+
+Thao tác chuẩn bị.
+1. Mở terminal. Trên Windows có thể dùng PowerShell trong VS Code.
+2. Kiểm tra Python bằng python --version.
+3. Kiểm tra uv bằng uv --version.
+4. Nếu chưa có uv, xem hướng dẫn chính thức của uv. README dự án cũng đưa cách cài bằng pip install uv.
+5. Tạo một thư mục riêng để giải nén bài tập. Mở chính thư mục chứa main.py trong trình soạn thảo.
+6. Chưa cần viết server ngay; đến bài 4 mới thiết lập và chạy dự án.
+Kết quả cần thấy: terminal nhận lệnh Python và uv; bạn biết nơi mở file và nơi nhập lệnh.
+
+Ví dụ dễ hiểu.
+Nếu Claude là người viết báo cáo, tool giống chức năng “mở hồ sơ” hoặc “sửa hồ sơ”; resource giống bộ hồ sơ ứng dụng đã đặt sẵn lên bàn; prompt giống phiếu giao việc có sẵn “hãy chuyển hồ sơ này thành Markdown”.
+Tự kiểm tra: Bạn có phân biệt được “nội dung hồ sơ” với “chức năng sửa hồ sơ” không? Đó là bước đầu để phân biệt resource và tool.
+
+2. Introducing MCP, MCP giải quyết việc gì?
+Mở bài gốc.
+
+Vấn đề trước khi có MCP.
+Giả sử chatbot của bạn phải trả lời: “Những pull request nào đang mở trong các repository GitHub của tôi?” Bạn cần cho mô hình biết có những công cụ nào, mỗi công cụ nhận tham số gì và phải chạy hàm nào khi mô hình yêu cầu.
+Nếu tự tích hợp tất cả, bạn phải viết mô tả/schema công cụ, hàm gọi GitHub API, xử lý phản hồi và duy trì chúng khi dịch vụ thay đổi. Làm tương tự cho nhiều dịch vụ sẽ tạo ra nhiều mã tích hợp.
+Một MCP server cho GitHub có thể đóng gói phần chức năng GitHub và công bố nó qua một giao diện chung. Ứng dụng của bạn kết nối server đó, khám phá công cụ rồi gọi công cụ khi cần.
+
+Điều chuyển đi đâu?
+Phần đặc thù dịch vụ, ví dụ gọi endpoint nào của GitHub, nằm trong MCP server. Phần điều phối hội thoại và quyết định cho phép thao tác vẫn thuộc ứng dụng. Nếu bạn tự viết MCP server thì bạn vẫn phải viết logic tích hợp phía server; lợi ích là nhiều ứng dụng có thể dùng lại giao diện đó.
+
+MCP khác tool use thế nào?
+Tool use là cơ chế mô hình yêu cầu dùng một công cụ có tên và đối số. MCP là cách ứng dụng khám phá và thực thi những khả năng được server công bố. Chúng bổ sung cho nhau.
+Ví dụ minh họa:
+Có một đoạn văn bản mẫu dài 6 dòng, xem trong tài liệu.
+
+Thao tác học bài này.
+1. Vẽ ba ô: ứng dụng chat, MCP client, MCP server GitHub.
+2. Thêm ô GitHub API sau MCP server.
+3. Ghi cạnh MCP server: “schema + hàm thực thi đặc thù GitHub”.
+4. Ghi cạnh ứng dụng: “hội thoại + gọi mô hình + xử lý tool use”.
+5. Thay GitHub bằng hệ thống tài liệu nội bộ. Kiểm tra xem trách nhiệm mỗi ô có còn hợp lý không.
+Kết quả cần đạt: bạn chỉ ra được nơi phải sửa mã khi API dịch vụ thay đổi: thường là phần triển khai MCP server tương ứng.
+
+Điểm dễ nhầm.
+MCP không phải mô hình AI mới.
+MCP không tự cấp quyền truy cập mọi dịch vụ.
+Ai cũng có thể viết MCP server; không phải server nào cũng do nhà cung cấp dịch vụ phát hành.
+Có giao thức chung không có nghĩa mọi ứng dụng đều hỗ trợ mọi tính năng giống nhau.
+Tự kiểm tra: Nếu ứng dụng đã dùng MCP, bạn có còn cần đoạn mã gửi câu hỏi tới Claude và chuyển kết quả tool về Claude không? Có.
+
+3. MCP clients, Hiểu đường đi của một yêu cầu.
+Mở bài gốc.
+
+Vai trò client.
+MCP client là đầu mối liên lạc mà ứng dụng dùng để nói chuyện với MCP server. SDK giúp xử lý kết nối, định dạng thông điệp và các thao tác của giao thức.
+Trong dự án mẫu, client khởi chạy server thành một tiến trình con, rồi hai bên trao đổi qua stdio: đầu vào/đầu ra chuẩn. Vì thế bạn không phải tự mở một HTTP server để làm bài.
+Bài học giới thiệu ý tưởng độc lập với lớp vận chuyển và nhắc đến HTTP, WebSocket cùng các cách truyền khác. Khi triển khai thực tế, cần chọn transport được phiên bản SDK và bên kết nối hỗ trợ. Đối chiếu tài liệu hiện tại cho thấy stdio và Streamable HTTP là các lựa chọn được SDK chính thức hỗ trợ; không suy ra rằng mọi client đều hỗ trợ WebSocket chỉ vì bài có nhắc tới. Python SDK chính thức.
+
+Hai trao đổi đầu tiên cần nhớ.
+Mục đích: Hỏi server có công cụ gì; Tên trong bài: ListToolsRequest / ListToolsResult; Cách gọi ở SDK 1.x: session.list_tools().
+Mục đích: Chạy một công cụ; Tên trong bài: CallToolRequest / CallToolResult; Cách gọi ở SDK 1.x: session.call_tool(...).
+Trong giao thức, các phương thức tương ứng thường được nhắc dưới dạng tools/list và tools/call. Các tên lớp request/result giúp mô tả thông điệp; bạn không cần tự dựng các lớp đó cho bài tập này.
+
+Đường đi đầy đủ: “Tôi có repository nào?”.
+1. Người dùng gửi câu hỏi vào ứng dụng.
+2. Ứng dụng hỏi MCP client danh sách tool.
+3. Client yêu cầu server liệt kê tool.
+4. Server trả tên, mô tả và schema đầu vào.
+5. Ứng dụng chuyển câu hỏi và định nghĩa tool cho Claude.
+6. Claude trả một yêu cầu dùng tool, ví dụ lấy danh sách repository.
+7. Ứng dụng đọc tên và đối số mà Claude đề xuất.
+8. Ứng dụng gọi MCP client để chạy tool.
+9. MCP server thực hiện logic tương ứng, chẳng hạn gọi GitHub API.
+10. Kết quả đi ngược về ứng dụng.
+11. Ứng dụng gửi kết quả tool cho Claude.
+12. Claude viết câu trả lời; ứng dụng hiển thị cho người dùng.
+Có một sơ đồ, xem trong tài liệu.
+
+Thao tác để tự kiểm chứng.
+1. Lấy một yêu cầu cụ thể: “Đọc report.pdf”.
+2. Viết tên tool dự kiến: read_doc_contents.
+3. Viết đối số: {"doc_id": "report.pdf"}.
+4. Tự chỉ ra bước nào thuộc mô hình và bước nào thuộc chương trình.
+5. Sau bài 8, mở core/chat.py và core/tools.py để tìm các bước tương ứng trong mã.
+Kết quả cần đạt: bạn hiểu rằng mô hình đề xuất lời gọi, còn mã ứng dụng và MCP server thực hiện lời gọi. Mô hình không trực tiếp chạy hàm Python trong bộ nhớ của bạn.
+
+4. Project setup, Thiết lập dự án.
+Mở bài gốc và tải bài tập.
+
+Sản phẩm sẽ xây.
+Một chatbot trong terminal làm việc với sáu tài liệu giả, chỉ lưu trong bộ nhớ Python. Ban đầu server có hai tool: đọc nội dung và thay nội dung. Các bài sau thêm tài nguyên cho chức năng @ và prompt cho lệnh /format.
+Khóa học xây cả client lẫn server để bạn hiểu hai phía. Trong công việc thực tế, bạn có thể chỉ viết server cho người khác dùng, hoặc chỉ viết ứng dụng client kết nối các server đã có.
+
+Bước 1, Tải đúng bộ mã nguồn.
+Trong mục Downloads có:
+cli_project.zip: bộ khởi đầu để điền chức năng theo bài.
+cli_project_COMPLETE.zip: bộ tham khảo có phần triển khai hoàn chỉnh hơn.
+Tải bộ khởi đầu để học; giữ bản hoàn chỉnh ở thư mục khác để đối chiếu. Giải nén rồi mở thư mục có README.md, pyproject.toml và main.py. Nếu terminal đang đứng ở thư mục cha, hãy cd vào đúng thư mục dự án.
+
+Bước 2, Nhận diện các file.
+Có một đoạn văn bản mẫu dài 13 dòng, xem trong tài liệu.
+
+Bước 3, Cấu hình.env.
+Mở.env ngay trong thư mục dự án và đặt các biến sau bằng thông tin của chính bạn:
+Có một đoạn mã dotenv dài 3 dòng, xem trong tài liệu.
+CLAUDE_MODEL phải là model ID hợp lệ, không phải nguyên chuỗi minh họa ở trên. Xem model được tài khoản của bạn hỗ trợ khi thực hành. main.py trong bản tải về kiểm tra cả hai biến đầu, dù phần README hướng dẫn thiết lập chủ yếu nhắc API key. USE_UV=1 làm ứng dụng khởi chạy server con bằng uv run mcp_server.py.
+Bạn chỉ nhập key trong file cấu hình của mình. Không đưa key vào câu hỏi cho chatbot hay nội dung tài liệu thử nghiệm. Chạy hội thoại trong main.py sẽ gọi Anthropic API theo tài khoản của bạn; kiểm tra server bằng Inspector không cần gọi mô hình.
+
+Bước 4, Cài môi trường theo uv.
+Nếu bộ mã nguồn có uv.lock, dùng cách bổ sung sau để bám phiên bản đã khóa:
+Đoạn mã powershell: uv sync --locked; uv run main.py.
+README của bài đưa quy trình tạo môi trường rồi cài dự án:
+Có một đoạn mã powershell dài 4 dòng, xem trong tài liệu.
+Hai quy trình là hai lựa chọn, không cần chạy cả hai. Cách có lockfile giúp tránh vô tình lấy SDK major mới do khai báo phụ thuộc dùng dấu >=. Khi dùng uv run, bạn thường không cần kích hoạt môi trường thủ công.
+Python: README ghi 3.9+, nhưng pyproject.toml của bản tải về yêu cầu 3.10 trở lên. Hãy theo yêu cầu trong file dự án; phần kiểm chứng của tài liệu dùng Python 3.11.
+
+Nếu không dùng uv.
+Ví dụ sau giữ MCP tại phiên bản đã đối chiếu, thay vì cài phiên bản mới nhất:
+Có một đoạn mã powershell dài 4 dòng, xem trong tài liệu.
+Đặt USE_UV="0" trong.env. Đây là cách cài bổ sung; README gốc đưa ví dụ ghim MCP 1.8.0. Muốn tái tạo sát bộ phụ thuộc đã tải, ưu tiên uv cùng lockfile.
+
+Bước 5, Kiểm tra ứng dụng cơ bản.
+1. Chạy uv run main.py trong thư mục dự án.
+2. Tại dấu nhắc >, nhập What's one plus one? rồi Enter.
+3. Kỳ vọng chatbot trả lời tương đương “2”. Câu chữ có thể khác.
+4. Nếu xuất hiện cảnh báo refresh resources/prompts ở bộ khởi đầu, có thể do các chức năng đó còn là TODO và sẽ được bổ sung ở bài sau. Phân biệt cảnh báo này với lỗi API key/model.
+5. Nhấn Ctrl+C để thoát.
+Điểm rất quan trọng: report.pdf trong dự án chỉ là khóa của dictionary chứa chuỗi văn bản. Chương trình chưa đọc PDF thật; tương tự với.docx. Sửa tài liệu chỉ sửa dữ liệu trong tiến trình, khởi động lại sẽ mất thay đổi.
+
+5. Defining tools with MCP, Tạo công cụ.
+Mở bài gốc.
+
+Ý tưởng cốt lõi.
+Bạn viết một hàm Python và gắn decorator @mcp.tool(...). SDK dùng chữ ký hàm, type hints và mô tả tham số để tạo schema công cụ. Schema cho mô hình biết tên tool, mục đích và các trường đầu vào.
+Ví dụ giống quầy tiếp nhận hồ sơ: bảng hướng dẫn ghi “Đọc hồ sơ”, cần cung cấp “mã hồ sơ”; nhân viên phía sau quầy biết cách tra kho và trả nội dung.
+
+Bước 1, Mở server và thêm import.
+Trong mcp_server.py, kiểm tra đã có:
+Có một đoạn mã python dài 3 dòng, xem trong tài liệu.
+Chỉ tạo một biến mcp. Nếu file đã có import/khởi tạo thì bổ sung phần còn thiếu, không dán lặp lại toàn bộ đầu file.
+
+Bước 2, Hiểu dữ liệu mẫu.
+docs ánh xạ ID tài liệu sang nội dung. Ví dụ riêng để dễ hình dung:
+Có một đoạn mã python dài 4 dòng, xem trong tài liệu.
+Khi làm trên dự án gốc, giữ dictionary sáu tài liệu sẵn có để các ví dụ trong bài khớp nhau.
+
+Bước 3, Tạo tool đọc.
+Thêm dưới dictionary, trước đoạn if name == "main"::
+Có một đoạn mã python dài 10 dòng, xem trong tài liệu.
+read_document là tên hàm Python nội bộ.
+read_doc_contents là tên tool được công bố, có thể khác tên hàm.
+doc_id: str cho biết trường đầu vào là chuỗi.
+Field(description=...) giải thích tham số cho bên sử dụng tool.
+Kiểm tra tồn tại giúp trả lỗi rõ ràng khi ID sai.
+
+Bước 4, Tạo tool sửa.
+Có một đoạn mã python dài 12 dòng, xem trong tài liệu.
+Ví dụ đầu vào:
+Đoạn mã json: {"doc_id": "report.pdf", "old_str": "20m", "new_str": "25m"}.
+
+Bước 5, Cho server chạy qua stdio.
+Cuối file cần có cấu trúc sau; giữ lại nếu đã có:
+Đoạn mã python: if name == "main":; mcp.run(transport="stdio").
+Đến bài 6, bạn sẽ dùng Inspector để gọi hai tool. Chỉ chạy trực tiếp file server có thể khiến terminal trông như đang chờ: server đang đợi thông điệp MCP, chưa phải lỗi.
+
+Hiểu đúng hành vi sửa.
+str.replace() mặc định thay mọi chỗ khớp, không chỉ lần đầu. Nếu old_str không có trong văn bản, chuỗi sẽ giữ nguyên và code trên không báo lỗi. Hàm mẫu trả None, vì thế không nên chờ một câu “đã sửa thành công”; hãy đọc lại tài liệu để kiểm chứng.
+Đây là logic demo. Nếu xây sản phẩm, có thể bổ sung kiểm tra số lần khớp, yêu cầu chính xác một vị trí, lưu phiên bản và trả thông tin thay đổi. Những phần đó nằm ngoài triển khai gốc của bài.
+Kết quả cần đạt: server công bố được hai tool; bạn hiểu schema được suy ra từ hàm và không nhầm tên hàm Python với tên tool.
+
+6. The server inspector, Kiểm tra server.
+Mở bài gốc.
+
+Inspector dùng để làm gì?
+Inspector là một client dành cho phát triển. Nó giúp bạn xem server công bố gì, điền tham số và gửi lời gọi trực tiếp. Nhờ đó, bạn có thể kiểm tra lỗi server mà chưa cần giao diện chat hoặc Claude.
+
+Bước 1, Mở Inspector.
+Trong terminal ở thư mục dự án:
+Đoạn mã powershell: uv run mcp dev mcp_server.py.
+Bài gốc viết mcp dev mcp_server.py sau khi kích hoạt môi trường; thêm uv run giúp chọn môi trường của dự án. Nếu được yêu cầu Node/npm để khởi chạy Inspector, cài Node theo yêu cầu của phiên bản Inspector đang dùng.
+Terminal sẽ in URL. Bài minh họa địa chỉ thường gặp nhưng hãy mở URL thực tế được in ra, kể cả phần token nếu có. Inspector hiện tại vẫn có lệnh khởi chạy bằng npx @modelcontextprotocol/inspector`; giao diện và điều kiện phiên bản đã thay đổi theo thời gian. Tài liệu Inspector chính thức.
+
+Bước 2, Kết nối.
+1. Giữ terminal đang chạy.
+2. Mở URL Inspector trong trình duyệt.
+3. Kiểm tra cấu hình server theo lệnh phát sinh từ mcp dev.
+4. Nhấn Connect nếu chưa kết nối.
+5. Kỳ vọng trạng thái chuyển sang Connected hoặc trạng thái tương đương.
+
+Bước 3, Thử tool đọc.
+1. Mở tab Tools.
+2. Nhấn List Tools nếu giao diện yêu cầu.
+3. Chọn read_doc_contents.
+4. Nhập doc_id là report.pdf.
+5. Nhấn Run Tool hoặc nút gọi tương đương.
+6. Xem kết quả. Với dữ liệu gốc, nội dung nhắc đến tháp ngưng tụ cao 20m.
+
+Bước 4, Thử sửa rồi đọc lại.
+1. Chọn edit_document.
+2. Điền doc_id=report.pdf, old_str=20m, new_str=25m.
+3. Chạy tool.
+4. Chuyển về read_doc_contents và đọc lại cùng ID.
+5. Kỳ vọng nội dung có 25m.
+Đây là một kiểm tra hành vi có ý nghĩa: nó xác nhận hai lời gọi làm việc trên cùng trạng thái server đang chạy, không chỉ xác nhận “nút gọi không báo lỗi”.
+
+Bước 5, Thử trường hợp lỗi.
+Gọi tool đọc với doc_id=khong-ton-tai.md. Bạn cần thấy lỗi về tài liệu không tồn tại. Sau đó thử sửa một chuỗi không xuất hiện và đọc lại: bạn sẽ thấy vì sao cần kiểm tra kết quả sửa thay vì chỉ tin trạng thái gọi hàm.
+
+Những điều cần nhớ.
+Mỗi lần server khởi động lại, dictionary được tạo lại từ đầu.
+Server do Inspector khởi chạy và server do main.py khởi chạy thường là hai tiến trình khác nhau; dữ liệu trong RAM của chúng không tự chia sẻ.
+Đã thấy tài liệu đổi trong Inspector không có nghĩa lần mở CLI mới sẽ thấy thay đổi đó.
+Đừng in log tùy tiện vào stdout của server stdio; nên dùng logging/stderr để tránh làm lẫn luồng giao thức.
+Tự kiểm tra: Nếu sửa trong Inspector rồi thoát Inspector, mở CLI và thấy 20m trở lại, bạn có thể giải thích bằng vòng đời tiến trình không?
+
+7. Course satisfaction survey, Khảo sát.
+Mở mục gốc.
+Đây là khảo sát phản hồi khóa học, không phải bài kỹ thuật về MCP. Trang hiển thị 3 câu hỏi và nút Start. Không có nội dung lập trình mới để giảng lại ở mục này.
+Nếu muốn gửi phản hồi, bạn tự mở mục này, nhấn Start, đọc từng câu và trả lời theo trải nghiệm của mình. Người biên soạn không chọn hoặc nộp phản hồi thay bạn.
+Bạn có thể tạm ghi lại ba điều để tự đánh giá việc học: khái niệm nào đã rõ, thao tác nào còn mắc và ví dụ nào bạn muốn áp dụng vào công việc. Đây là gợi ý riêng, không phải nội dung ba câu hỏi chính thức.
+
+8. Implementing a client, Viết client.
+Mở bài gốc.
+
+Hai thành phần của client trong bài.
+1. MCPClient: lớp bọc do dự án tự viết, cung cấp những hàm dễ gọi cho ứng dụng.
+2. ClientSession: đối tượng của SDK, làm việc với kết nối và các thao tác MCP.
+Lớp bọc giống bảng điều khiển đơn giản; session giống bộ phận thật sự giữ đường truyền. Bạn không phải viết lại giao thức khi tạo lớp bọc.
+
+Bước 1, Đọc phần kết nối đã có.
+Mở mcp_client.py. Trong bản đối chiếu, connect() thực hiện:
+1. Tạo StdioServerParameters từ command, args và env.
+2. Mở stdio_client(...) để khởi chạy/kết nối tiến trình server.
+3. Nhận hai luồng đọc và ghi.
+4. Tạo ClientSession bằng hai luồng đó.
+5. Gọi await session.initialize() để khởi tạo phiên.
+AsyncExitStack giữ các context manager để đóng tài nguyên theo đúng thứ tự khi kết thúc. async with MCPClient(...) giúp tự kết nối lúc vào và cleanup lúc ra.
+
+Bước 2, Bổ sung hàm liệt kê tool.
+Đặt bên trong lớp MCPClient, thay phần TODO tương ứng:
+Có một đoạn mã python dài 3 dòng, xem trong tài liệu.
+self.session() là phương thức của lớp bọc, trả về session đã khởi tạo..list_tools() phía sau là phương thức SDK. Kết quả SDK là một đối tượng có trường.tools, không phải danh sách trần.
+
+Bước 3, Bổ sung hàm gọi tool.
+Có một đoạn mã python dài 4 dòng, xem trong tài liệu.
+Ví dụ: tool_name="read_doc_contents", tool_input={"doc_id": "report.pdf"}. Không truyền chuỗi JSON đã mã hóa vào chỗ dictionary nếu phương thức đang nhận dictionary.
+
+Bước 4, Kiểm tra client trực tiếp.
+Bài giảng hướng dẫn chạy:
+Đoạn mã powershell: uv run mcp_client.py.
+Điểm cần sửa theo bộ mã nguồn đã tải: hàm kiểm tra cuối mcp_client.py trong bản COMPLETE chỉ có pass bên trong async with; do đó chạy thành công cũng có thể không in gì. Thay pass bằng đoạn sau để quan sát:
+Có một đoạn mã python dài 6 dòng, xem trong tài liệu.
+Kỳ vọng thấy hai tên read_doc_contents, edit_document và nội dung tài liệu. Kiểm tra này chỉ dùng MCP server cục bộ, không cần Claude.
+
+Bước 5, Kiểm tra toàn luồng chat.
+1. Chạy uv run main.py.
+2. Nhập What is the contents of the report.pdf document?.
+3. Ứng dụng lấy danh sách tool và gửi định nghĩa cho Claude.
+4. Claude có thể đề xuất gọi read_doc_contents.
+5. Ứng dụng dùng client để thực hiện và gửi kết quả về Claude.
+6. Bạn nhận câu trả lời dựa trên nội dung thật của dictionary.
+
+Nối với phần điều phối đã được viết sẵn.
+Trong core/tools.py, dự án chuyển định nghĩa MCP sang định dạng mà API mô hình dùng:
+Từ MCP tool: name; Sang định nghĩa tool cho Claude: name.
+Từ MCP tool: description; Sang định nghĩa tool cho Claude: description.
+Từ MCP tool: inputSchema; Sang định nghĩa tool cho Claude: input_schema.
+Trong core/chat.py, chương trình lặp khi mô hình trả stop_reason == "tool_use". Kết quả tool phải gắn với ID của lời gọi tương ứng rồi được gửi lại trong hội thoại. Nếu chỉ thực thi tool mà không gửi kết quả cho mô hình, mô hình chưa có dữ liệu để hoàn tất câu trả lời.
+Kết quả cần đạt: bạn liệt kê/gọi được tool qua client, hiểu khởi tạo/cleanup và chỉ ra nơi chuyển schema sang định dạng API mô hình.
+
+9. Defining resources, Cung cấp dữ liệu.
+Mở bài gốc.
+
+Vì sao đã có tool đọc mà còn cần resource?
+Cùng một tài liệu có thể được lấy theo hai cách, tùy ai chủ động:
+Người dùng hỏi chung “Trong báo cáo có gì?”; mô hình có thể chọn tool đọc.
+Người dùng gõ @report.pdf; ứng dụng đã biết tài liệu được chọn và chủ động lấy nội dung để đính kèm vào câu hỏi.
+Cách thứ hai phù hợp với resource. Ứng dụng cần dữ liệu cho giao diện hoặc ngữ cảnh, không cần chờ mô hình quyết định gọi tool.
+Ví von: tool là “nhờ người xử lý đi lấy hồ sơ khi thấy cần”; resource là “ứng dụng lấy đúng hồ sơ bạn vừa chọn và đặt sẵn trên bàn”. Một tool vẫn có thể chỉ đọc dữ liệu. Phân biệt hai loại theo cách dùng và bên điều khiển, không chỉ theo tiêu chí có sửa dữ liệu hay không.
+
+Hai dữ liệu cần cho chức năng @.
+1. Danh sách ID tài liệu để hiện gợi ý.
+2. Nội dung tài liệu được chọn để đưa vào hội thoại.
+Server nhận yêu cầu đọc theo URI và trả nội dung cùng metadata như MIME type. Trong bài, luồng này được gọi là ReadResourceRequest / ReadResourceResult.
+
+Bước 1, Tạo resource có URI cố định.
+Trong mcp_server.py, thêm trước phần chạy server:
+Có một đoạn mã python dài 3 dòng, xem trong tài liệu.
+docs://documents là định danh do server và ứng dụng thống nhất, không phải một địa chỉ web bắt buộc mở được bằng Chrome. URI này luôn trỏ tới danh sách ID tài liệu. SDK chuyển danh sách Python thành nội dung phù hợp để gửi qua giao thức.
+
+Bước 2, Tạo resource có tham số.
+Có một đoạn mã python dài 7 dòng, xem trong tài liệu.
+Đây là resource template. Khi client đọc docs://documents/plan.md, SDK lấy plan.md từ vị trí {doc_id} rồi truyền vào hàm.
+URI: docs://documents; Ý nghĩa: Tất cả ID tài liệu; Kiểu nội dung ở bài tập: JSON, ví dụ ["report.pdf", "plan.md"].
+URI: docs://documents/report.pdf; Ý nghĩa: Nội dung một tài liệu; Kiểu nội dung ở bài tập: Văn bản.
+
+Bước 3, Chọn MIME type đúng với dữ liệu thực tế.
+MIME type giúp client biết cách xử lý nội dung. application/json dùng cho dữ liệu JSON; text/plain cho văn bản thuần. Có thể cung cấp dữ liệu nhị phân, nhưng client phải xử lý nhánh binary phù hợp.
+Đừng đặt MIME application/pdf chỉ vì ID kết thúc bằng.pdf: trong bài này giá trị trả về vẫn là chuỗi mô phỏng nội dung, không phải byte của một PDF thật.
+
+Bước 4, Thử trong Inspector.
+1. Lưu file, khởi động lại phiên kiểm tra nếu server chưa nhận thay đổi.
+2. Chạy uv run mcp dev mcp_server.py.
+3. Mở URL terminal cung cấp và kết nối server.
+4. Mở Resources; liệt kê và đọc docs://documents.
+5. Kỳ vọng thấy danh sách sáu ID trong dự án gốc.
+6. Mở Resource Templates hoặc khu vực template tương ứng.
+7. Chọn docs://documents/{doc_id}, nhập doc_id=report.pdf.
+8. Đọc resource và kiểm tra nội dung, URI, MIME type trong phản hồi.
+
+Một phân biệt quan trọng.
+Liệt kê metadata các resource là thao tác của giao thức. Còn đọc resource docs://documents để lấy danh sách ID nghiệp vụ là thiết kế riêng của dự án. Hai việc không đồng nghĩa. Ở đây danh sách tài liệu được trả về như nội dung của một resource JSON.
+Kết quả cần đạt: server cung cấp được URI cố định lẫn URI template; bạn hiểu chức năng @ cần cả danh sách ID và nội dung.
+
+10. Accessing resources, Đọc và đính kèm dữ liệu.
+Mở bài gốc.
+
+Việc còn thiếu ở client.
+Server đã cung cấp dữ liệu. Client cần đọc URI, nhận phản hồi rồi chuyển nội dung thành kiểu dữ liệu mà ứng dụng dùng được. Với resource JSON, ứng dụng cần danh sách Python; với tài liệu văn bản, ứng dụng cần chuỗi.
+
+Bước 1, Thêm import trong mcp_client.py.
+Có một đoạn mã python dài 4 dòng, xem trong tài liệu.
+Chỉ thêm những import chưa có. AnyUrl biểu diễn URI theo kiểu mà SDK 1.x sử dụng.
+
+Bước 2, Viết hàm đọc resource.
+Đoạn sau tương ứng cách triển khai của dự án, thêm kiểm tra đầu vào phản hồi để dễ hiểu lỗi hơn:
+Có một đoạn mã python dài 10 dòng, xem trong tài liệu.
+Đây là bản bổ sung kiểm tra lỗi, không phải chép nguyên đoạn trong bài. Mã của khóa học chọn phần tử đầu và xử lý JSON/văn bản. Một phản hồi MCP có thể có nhiều phần; không nên khái quát rằng mọi resource luôn chỉ có đúng một phần tử.
+
+Đọc từng dòng cho dễ hiểu.
+1. Gửi yêu cầu đọc URI qua session.
+2. Lấy một phần nội dung từ result.contents theo giả định của bài.
+3. Xác định có phải dạng văn bản không.
+4. Nếu MIME là JSON, dùng json.loads() để biến chuỗi JSON thành đối tượng Python.
+5. Nếu là văn bản khác, trả nguyên chuỗi.
+Ví dụ chuỗi '["report.pdf", "plan.md"]' sau json.loads() trở thành danh sách ['report.pdf', 'plan.md']. Bạn có thể dùng danh sách đó để tạo gợi ý trong giao diện.
+
+Bước 3, Kiểm tra trực tiếp trong client.
+Trong context async with... as _client của phần kiểm tra cuối file, dùng:
+Đoạn mã python: print(await _client.read_resource("docs://documents")); print(await _client.read_resource("docs://documents/report.pdf")).
+Chạy uv run mcp_client.py. Kết quả đầu là danh sách ID; kết quả sau là nội dung tài liệu. Không cần gọi Claude cho bước kiểm tra này.
+
+Bước 4, Hiểu phần giao diện có sẵn.
+Trong core/cli_chat.py:
+list_docs_ids() đọc docs://documents.
+get_doc_content(doc_id) đọc docs://documents/{doc_id}.
+_extract_resources(query) tìm những từ bắt đầu bằng @, rồi lấy nội dung tương ứng.
+_process_query(...) đưa câu hỏi và tài liệu vào ngữ cảnh gửi cho Claude.
+Ký tự @ là quy ước của ứng dụng mẫu, không phải một ký tự đặc biệt mà giao thức MCP tự xử lý.
+
+Bước 5, Thử chức năng @.
+1. Chạy uv run main.py.
+2. Nhập Tell me about @.
+3. Khi danh sách gợi ý xuất hiện, dùng phím lên/xuống để chọn; hoàn tất bằng Tab hoặc phím phù hợp với giao diện. Bài giảng cũng minh họa chọn rồi tiếp tục bằng dấu cách.
+4. Cách ổn định nếu autocomplete không như mong đợi: gõ nguyên câu Tell me about @report.pdf.
+5. Nhấn Enter để gửi.
+6. Ứng dụng đọc tài liệu trước khi gửi câu hỏi; Claude có thể trả lời ngay từ nội dung đã đính kèm, không cần một lượt tool đọc riêng.
+Ví dụ ngữ cảnh do ứng dụng tạo, giản lược để dễ nhìn:
+Có một đoạn mã xml dài 4 dòng, xem trong tài liệu.
+
+Điểm dễ vướng trong mã mẫu.
+Bộ tách mention dựa vào query.split() và nhận diện từng từ bắt đầu bằng @. Vì vậy, @report.pdf? có thể không khớp report.pdf. Khi thử bài, dùng @report.pdf với khoảng trắng tách từ và tránh dấu câu dính ngay sau ID.
+Đính kèm resource không làm chi phí ngữ cảnh biến mất: nội dung vẫn đi vào đầu vào của mô hình. Với tài liệu lớn, cần thiết kế chọn đoạn hoặc giới hạn nội dung; bài tập dùng chuỗi ngắn để tập trung vào MCP.
+Kết quả cần đạt: bạn thấy được đường đi @ID, read_resource, ngữ cảnh, mô hình, và phân biệt nó với lời gọi tool do mô hình đề xuất.
+
+11. Defining prompts, Tạo mẫu hướng dẫn.
+Mở bài gốc.
+
+Prompt trong MCP là gì?
+Đó là một mẫu tạo ra các thông điệp có thể gửi cho mô hình. Mẫu có tên, mô tả và tham số. Server xây sẵn hướng dẫn để người dùng không phải viết lại một yêu cầu phức tạp mỗi lần.
+Ví dụ: thay vì chỉ gõ “định dạng lại tài liệu”, một prompt tốt có thể nói rõ giữ nguyên ý nghĩa, thêm heading/list/table khi phù hợp, dùng công cụ sửa và trả lại phiên bản cuối. Lợi ích là một cách giao việc nhất quán và có thể tái sử dụng. Chất lượng vẫn phụ thuộc vào mẫu, mô hình, dữ liệu và việc kiểm thử; không phải cứ dùng MCP prompt là kết quả luôn đúng.
+
+Quy trình mẫu của bài.
+Người dùng nhập /format plan.md. Ứng dụng nhận tên format và doc_id=plan.md, lấy thông điệp đã điền tham số từ server rồi chuyển cho Claude. Claude dùng tools để đọc và sửa tài liệu.
+Điểm mấu chốt: gọi get_prompt mới chỉ lấy thông điệp. Nó không tự gọi mô hình và không tự sửa tài liệu.
+
+Bước 1, Thêm import.
+Trong mcp_server.py:
+Đoạn mã python: from mcp.server.fastmcp.prompts import base; from pydantic import Field.
+
+Bước 2, Định nghĩa prompt format.
+Ví dụ diễn đạt lại hướng dẫn của bài bằng tiếng Việt:
+Có một đoạn mã python dài 15 dòng, xem trong tài liệu.
+Tên công bố là format, dù tên hàm Python là format_document. Client phải yêu cầu tên công bố.
+Mẫu gốc trong bộ COMPLETE yêu cầu thêm cấu trúc và có thể thêm câu chữ nhưng không đổi ý nghĩa; sau khi sửa thì trả bản cuối, không giải thích thay đổi. Ví dụ trên bổ sung việc nói rõ dùng tool đọc để người mới dễ hình dung luồng thực thi.
+
+Bước 3, Kiểm tra mẫu trong Inspector.
+1. Lưu file, khởi chạy/kết nối lại Inspector.
+2. Mở phần Prompts.
+3. Liệt kê prompt và chọn format.
+4. Điền doc_id=plan.md.
+5. Nhấn Get Prompt hoặc nút lấy prompt tương đương.
+6. Kiểm tra kết quả có message role user và nội dung đã chứa plan.md.
+7. Xác nhận không còn biến chưa điền như {doc_id} trong message cuối.
+Ở bước này bạn đang xem yêu cầu sẽ gửi cho mô hình. Nếu Inspector chỉ hiển thị message mà tài liệu chưa đổi, đó là hành vi đúng của việc lấy prompt.
+
+Bước 4, Nghĩ về chất lượng mẫu.
+Thử mẫu với tài liệu ngắn, tài liệu đã có Markdown và tài liệu chứa số liệu cần giữ nguyên. Kiểm tra đầu ra có mất thông tin không. Nếu một prompt có tên “summarize”, nên nêu rõ độ dài tóm tắt, nội dung cần giữ và có sửa tài liệu gốc hay chỉ trả lời.
+Trong bộ COMPLETE đã đối chiếu có TODO cho prompt tóm tắt và README minh họa /summarize, nhưng server thực tế chỉ định nghĩa prompt format. Vì vậy đừng coi /summarize là lệnh chắc chắn có sẵn.
+Kết quả cần đạt: bạn tạo được prompt có tham số và hiểu sự khác biệt giữa “lấy hướng dẫn” với “thực thi quy trình có mô hình và tools”.
+
+12. Prompts in the client, Dùng mẫu từ client.
+Mở bài gốc.
+
+Hai chức năng cần bổ sung.
+Client cần hỏi “server có những prompt nào?” và “hãy tạo message cho prompt này với các đối số này”. Một hàm phục vụ danh sách lệnh, hàm còn lại phục vụ lần người dùng chọn lệnh cụ thể.
+
+Bước 1, Liệt kê prompt.
+Trong lớp MCPClient của mcp_client.py:
+Có một đoạn mã python dài 3 dòng, xem trong tài liệu.
+Danh sách chứa metadata như tên, mô tả và đối số. Ứng dụng dùng nó để xây menu hoặc gợi ý lệnh.
+
+Bước 2, Lấy thông điệp đã điền tham số.
+Có một đoạn mã python dài 3 dòng, xem trong tài liệu.
+Ví dụ:
+Có một đoạn mã python dài 3 dòng, xem trong tài liệu.
+Đối số là mapping tên tham số sang chuỗi. Khóa doc_id phải khớp tham số server định nghĩa; format phải khớp tên prompt công bố.
+
+Bước 3, Hiểu ứng dụng nối prompt vào hội thoại thế nào.
+Trong core/cli_chat.py, _process_command thực hiện luồng sau:
+1. Kiểm tra câu nhập có bắt đầu bằng / không.
+2. Tách tên lệnh và ID tài liệu.
+3. Gọi get_prompt(command, {"doc_id":...}).
+4. Chuyển các MCP prompt message sang định dạng message mà Anthropic API nhận.
+5. Thêm chúng vào lịch sử hội thoại.
+6. Để vòng lặp chat gọi Claude và xử lý tool use như các bài trước.
+MCP message và message của API mô hình là hai cấu trúc riêng; dự án có hàm chuyển đổi để nối chúng. Không nên mặc định truyền nguyên mọi loại MCP content sang một API mô hình bất kỳ mà không chuyển đổi.
+
+Bước 4, Thử /format.
+1. Chạy uv run main.py.
+2. Gõ /; giao diện có thể hiện danh sách prompt.
+3. Chọn hoặc gõ format.
+4. Thêm dấu cách, chọn hoặc gõ plan.md.
+5. Kiểm tra cả dòng là /format plan.md, rồi Enter.
+6. Ứng dụng lấy prompt và gửi cho Claude.
+7. Claude có thể gọi tool đọc, tạo nội dung Markdown rồi gọi tool sửa.
+8. Bạn nhận phiên bản được định dạng.
+9. Trong cùng phiên chat, hỏi What is the contents of the plan.md document? để đọc lại và kiểm chứng thay đổi.
+Câu chữ Markdown cụ thể không cố định. Với dữ liệu gốc chỉ có một câu ngắn, không cần mong chờ một báo cáo dài hoặc nhiều bảng.
+
+Nếu menu không hoàn thành đúng.
+Bản CLI có một số giới hạn ở autocomplete đối số. Bạn có thể gõ thẳng /format plan.md. Cũng nên tránh chỉ nhập /format rồi Enter: bộ xử lý lệnh mẫu truy cập từ thứ hai và chưa kiểm tra đầy đủ trường hợp thiếu đối số.
+
+Ba hiểu nhầm cần tránh.
+/format là quy ước UI của ứng dụng này, không phải cú pháp lệnh bắt buộc của MCP.
+Prompt được lấy về chưa tạo ra kết quả cuối; vẫn cần lượt gọi mô hình và thực thi tool.
+Một mẫu prompt có thể chứa nhiều message user/assistant; ví dụ chỉ trả một user message để đơn giản hóa.
+Kết quả cần đạt: bạn lần được đường đi /format plan.md, get_prompt, messages, Claude, tools, nội dung mới.
+
+13. Final assessment on MCP, Ôn để làm đánh giá.
+Mở mục gốc.
+
+Nội dung đã kiểm tra được trên trang.
+Bài có tên Final Assessment Quiz on MCP, gồm 7 câu hỏi. Sau khi mở Start, câu đầu hỏi về hai thành phần chính khi xây MCP client. Nội dung kiểm tra tương ứng bài 8: lớp bọc MCP Client và Client Session.
+Trang yêu cầu chọn câu trả lời mới đi tiếp. Người biên soạn không chọn/nộp đáp án thay bạn, vì vậy không khẳng định đã đọc sáu câu còn lại. Những câu bên dưới là bài tự luyện do người biên soạn tạo, không phải đề chính thức hoặc đáp án chính thức của Anthropic.
+
+Cách tự làm bài trên trang.
+1. Ôn ba cặp: tool/model, resource/ứng dụng, prompt/người dùng.
+2. Mở mục đánh giá; nếu trang đang ở câu đầu thì tiếp tục từ đó.
+3. Đọc tình huống và tự chọn phương án.
+4. Nhấn Next Question để chuyển câu sau.
+5. Đọc các hướng dẫn và kết quả do hệ thống hiển thị ở cuối. Tên nút nộp và quy định đạt phụ thuộc trang thực tế; tài liệu này không suy đoán điểm chuẩn.
+
+Bảy câu tự luyện kèm giải thích.
+1. Chatbot kết nối được GitHub qua MCP. MCP thay thế hoàn toàn GitHub API không?
+Không. MCP server có thể vẫn gọi GitHub API ở phía sau. MCP chuẩn hóa cách ứng dụng AI khám phá và gọi khả năng của server.
+2. Claude trả yêu cầu read_doc_contents với doc_id=report.pdf. Thành phần nào thực hiện hàm đọc?
+Ứng dụng nhận yêu cầu tool use, gọi qua MCP client; MCP server thực hiện hàm. Claude nhận kết quả để tiếp tục suy luận.
+3. Vì sao client phải gọi initialize() và cleanup?
+Khởi tạo để thiết lập phiên giao tiếp; cleanup để đóng session/luồng/tiến trình được quản lý, tránh giữ tài nguyên sau khi ứng dụng kết thúc.
+4. Bạn cần danh sách tài liệu để hiện autocomplete. Chọn primitive nào?
+Resource phù hợp vì ứng dụng chủ động lấy dữ liệu cho UI. Dự án dùng URI docs://documents trả danh sách ID.
+5. Một tool chỉ đọc dữ liệu thì có sai thiết kế không?
+Không. Tools không bắt buộc phải ghi dữ liệu. Trong bài, read_doc_contents là một tool đọc. Cách lựa chọn và bên điều khiển mới là tiêu chí quan trọng.
+6. get_prompt("format", {"doc_id": "plan.md"}) có lập tức sửa tài liệu không?
+Không. Nó trả message được dựng từ mẫu. Ứng dụng còn phải gửi message tới mô hình và thực thi các tool mà mô hình yêu cầu.
+7. Sửa report.pdf từ 20m thành 25m rồi khởi động lại server, vì sao lại thành 20m?
+Dữ liệu là dictionary trong RAM. Khi tiến trình mới khởi động, dictionary lấy lại giá trị ban đầu; bài tập chưa lưu xuống đĩa hoặc cơ sở dữ liệu.
+
+Bài kiểm tra thực hành trước khi làm đánh giá.
+Bạn nên tự làm được cả năm việc: liệt kê tool, gọi tool đọc, sửa rồi đọc lại, đọc resource JSON và lấy prompt có tham số. Nếu cả năm đều chạy được và bạn giải thích được ai chủ động mỗi bước, kiến thức cốt lõi của khóa đã khá vững.
+
+14. MCP review, Chọn đúng thành phần.
+Mở bài gốc.
+
+Ba primitive, ba nơi chủ động.
+Primitive: Tool; Bên chủ động theo cách thiết kế của khóa học: Mô hình đề xuất sử dụng; Trong dự án: Đọc/sửa tài liệu; Khi nào phù hợp?: Cần mô hình chọn một khả năng để hoàn thành việc.
+Primitive: Resource; Bên chủ động theo cách thiết kế của khóa học: Mã ứng dụng; Trong dự án: Danh sách ID và nội dung cho @; Khi nào phù hợp?: Cần dữ liệu cho UI hoặc ngữ cảnh.
+Primitive: Prompt; Bên chủ động theo cách thiết kế của khóa học: Người dùng kích hoạt qua UI; Trong dự án: /format plan.md; Khi nào phù hợp?: Cần một mẫu giao việc/quy trình có thể dùng lại.
+“Model-controlled” trong bài mô tả nơi đề xuất lựa chọn tool. Ứng dụng vẫn thực thi lời gọi, quản lý quyền và có thể yêu cầu người dùng duyệt thao tác theo thiết kế sản phẩm. Đây không phải cam kết rằng mô hình được chạy mọi hành động vô điều kiện.
+
+Một tình huống dùng cả ba.
+Bạn muốn định dạng lại kế hoạch triển khai:
+1. Resource cung cấp danh sách tài liệu để giao diện gợi ý plan.md.
+2. Người dùng chọn prompt format và tài liệu.
+3. Ứng dụng lấy thông điệp hướng dẫn từ server.
+4. Claude chọn tool đọc tài liệu.
+5. Claude soạn lại nội dung rồi đề xuất tool sửa.
+6. Ứng dụng chuyển kết quả tool trở lại Claude.
+7. Claude trả bản cuối cho người dùng.
+Ba primitive hợp tác trong một quy trình, không phải ba lựa chọn luôn loại trừ lẫn nhau.
+
+Cách chọn khi bạn tự xây ứng dụng.
+Hãy hỏi lần lượt:
+“Tôi muốn mô hình có thêm một khả năng mà nó có thể chọn dùng?”, Xem xét tool.
+“Mã ứng dụng đã biết cần dữ liệu gì cho UI/ngữ cảnh?”, Xem xét resource.
+“Người dùng nên có một thao tác để gọi mẫu hướng dẫn đã chuẩn bị?”, Xem xét prompt.
+Ví dụ mở rộng do người biên soạn đề xuất:
+Nhu cầu: Mô hình kiểm tra tồn kho theo mã hàng; Thiết kế có thể dùng: Tool check_stock.
+Nhu cầu: Giao diện hiển thị danh sách kho để chọn; Thiết kế có thể dùng: Resource danh sách kho.
+Nhu cầu: Nút “Lập báo cáo tồn kho tuần”; Thiết kế có thể dùng: Prompt có tham số tuần/kho.
+Nhu cầu: Ứng dụng đính kèm tài liệu đã chọn vào câu hỏi; Thiết kế có thể dùng: Resource nội dung tài liệu.
+Nhu cầu: Mô hình đề xuất tạo một bản ghi mới; Thiết kế có thể dùng: Tool tạo bản ghi, đi qua quyền và quy trình của ứng dụng.
+
+Thao tác tổng kết.
+1. Mở mcp_server.py, tìm ba decorator @mcp.tool, @mcp.resource, @mcp.prompt.
+2. Với mỗi hàm, nói rõ đầu vào, đầu ra và ai chủ động dùng nó.
+3. Mở mcp_client.py, đối chiếu phương thức gọi tương ứng.
+4. Chạy ba kịch bản: hỏi đọc tài liệu bằng tool, hỏi với @report.pdf, chạy /format plan.md.
+5. Giải thích vì sao các kịch bản khác nhau nhưng có thể dùng cùng nguồn dữ liệu docs.
+Sau khóa học, bạn cần nắm: MCP chuẩn hóa kết nối; client giữ đường giao tiếp; server cung cấp khả năng; host điều phối mô hình và công cụ; tools/resources/prompts phục vụ ba kiểu tương tác khác nhau.
+
+Bài thực hành độc lập: tự thấy cả ba primitive hoạt động.
+Phần bổ sung của người biên soạn. Đây là một ví dụ nhỏ chạy riêng, không thay thế bộ CLI của khóa học. Bạn sẽ kiểm tra giao tiếp MCP trực tiếp; chưa có mô hình nên chưa có bước AI tự quyết định gọi tool hoặc tự viết lại tài liệu.
+Hai file dưới đây được thiết kế cho Python 3.11 và mcp==1.26.0, cùng phiên bản MCP được khóa trong bộ bài tập đã đối chiếu. Không cần.env hoặc API key cho ví dụ này.
+
+A. Tạo thư mục và môi trường.
+Mở PowerShell trong nơi bạn muốn lưu bài thực hành, tạo thư mục mới:
+Có một đoạn mã powershell dài 4 dòng, xem trong tài liệu.
+Sau đó tạo demo_server.py và smoke_client.py trong chính thư mục mcp-demo. Hai file cùng cấp với nhau. Nếu máy chưa có Python 3.11, chuẩn bị Python trước khi chạy lệnh tạo môi trường này.
+
+B. File demo_server.py.
+Đây là server đủ tools, resources và prompt. So với tool sửa tối giản trong bài, ví dụ bổ sung việc báo lỗi khi không tìm thấy chuỗi cần thay và trả một câu xác nhận. Dữ liệu vẫn chỉ ở trong RAM.
+Có một đoạn mã python dài 54 dòng, xem trong tài liệu.
+Đọc mã theo nhóm: require_doc là helper nội bộ, không được công bố thành tool vì không có decorator. Hai hàm có @mcp.tool là khả năng gọi được qua MCP. Hai hàm có @mcp.resource cung cấp dữ liệu. Hàm có @mcp.prompt trả hướng dẫn cho mô hình, không thực hiện sửa dữ liệu.
+
+C. File smoke_client.py.
+Đây là chương trình kiểm tra hành vi. Nó tự khởi chạy server bằng đúng Python đang chạy client, khởi tạo session, gọi và kiểm tra kết quả, sau đó đóng kết nối bằng async with.
+Có một đoạn mã python dài 90 dòng, xem trong tài liệu.
+
+D. Chạy và đọc kết quả.
+Trong PowerShell, tại thư mục chứa hai file:
+Đoạn mã powershell: .\.venv\Scripts\python.exe smoke_client.py.
+Bạn không cần mở thêm terminal để chạy server, vì client sẽ tự khởi chạy nó. Kết quả cần có các dòng PASS và kết thúc bằng:
+Đoạn văn bản mẫu: All MCP checks passed. No model API was called.
+Điều này xác nhận đường giao tiếp MCP, các handler và dữ liệu trả về hoạt động trong ví dụ. Nó chưa xác nhận Claude chọn tool tốt hay định dạng văn bản đẹp, vì chưa có lời gọi mô hình.
+
+E. Dùng chính ví dụ này trong Inspector.
+Đoạn mã powershell: .\.venv\Scripts\mcp.exe dev demo_server.py.
+Mở URL được in ra, kết nối và thử lại các thao tác từ bài 6, 9, 11. Khi Inspector khởi chạy một server mới, nội dung ban đầu lại có 20m. Trong cùng phiên Inspector, sửa sang 25m rồi đọc bằng cả tool và resource để thấy chúng dùng chung dictionary.
+
+F. Nối sang ứng dụng có mô hình.
+Để có trải nghiệm chat, quay lại bộ dự án khóa học: main.py đã có phần gọi Claude và vòng lặp xử lý tool use. Bạn cần hiểu bốn đoạn nối:
+1. list_tools(), chuyển schema thành định nghĩa tool cho API mô hình.
+2. Phản hồi tool_use, call_tool(name, input).
+3. Kết quả tool, message kết quả, gắn với ID lời gọi, gọi lại mô hình.
+4. read_resource hoặc get_prompt, chuyển nội dung/message vào hội thoại.
+Chỉ một MCP server và một client kiểm tra không tự tạo ra chatbot. Phần host gọi mô hình mới hoàn thành luồng đó.
+
+Xử lý các lỗi thường gặp khi làm theo.
+Hiện tượng: Không có lệnh uv; Nguyên nhân nên kiểm tra: Chưa cài hoặc terminal chưa nhận PATH; Thao tác cụ thể: Kiểm tra hướng dẫn uv; mở terminal mới sau khi cài.
+Hiện tượng: ModuleNotFoundError: mcp; Nguyên nhân nên kiểm tra: Chạy nhầm Python/môi trường; Thao tác cụ thể: Với dự án dùng uv run...; với demo dùng đúng.venv/Scripts/python.exe.
+Hiện tượng: Lỗi import FastMCP/API khác ví dụ; Nguyên nhân nên kiểm tra: Đang dùng SDK khác major; Thao tác cụ thể: Xem phiên bản cài đặt; dùng lockfile khóa học hoặc mcp==1.26.0 cho demo.
+Hiện tượng: CLAUDE_MODEL cannot be empty; Nguyên nhân nên kiểm tra: Thiếu biến model trong.env; Thao tác cụ thể: Điền model ID hợp lệ trong file ở thư mục dự án.
+Hiện tượng: ANTHROPIC_API_KEY cannot be empty; Nguyên nhân nên kiểm tra: Thiếu key hoặc file không được nạp như mong đợi; Thao tác cụ thể: Kiểm tra tên.env và vị trí chạy main.py.
+Hiện tượng: Lỗi model không tồn tại/không được phép; Nguyên nhân nên kiểm tra: Model ID sai hoặc tài khoản không có quyền; Thao tác cụ thể: Đối chiếu model được tài khoản hỗ trợ rồi cập nhật cấu hình.
+Hiện tượng: Chạy server thấy terminal đứng yên; Nguyên nhân nên kiểm tra: Server stdio đang chờ client; Thao tác cụ thể: Chạy client hoặc Inspector để gửi yêu cầu.
+Hiện tượng: Inspector không kết nối; Nguyên nhân nên kiểm tra: Server lỗi, command/path sai, hoặc URL khởi chạy không đầy đủ; Thao tác cụ thể: Xem terminal, kiểm tra file server và mở đúng URL vừa được in.
+Hiện tượng: Tools/Resources/Prompts chưa có; Nguyên nhân nên kiểm tra: Đăng ký sai chỗ, chưa lưu file hoặc tiến trình dùng mã cũ; Thao tác cụ thể: Đặt decorator trước mcp.run, lưu file, kết nối lại server và liệt kê lại.
+Hiện tượng: Chạy mcp_client.py không in gì; Nguyên nhân nên kiểm tra: Phần kiểm tra cuối file chỉ có pass; Thao tác cụ thể: Thêm lệnh in/gọi kiểm tra như bài 8.
+Hiện tượng: Sửa xong mà nội dung không đổi; Nguyên nhân nên kiểm tra: old_str không khớp, hoặc đang đọc tiến trình khác; Thao tác cụ thể: Đọc trước để lấy chuỗi chính xác; sửa và đọc lại trong cùng phiên.
+Hiện tượng: Dữ liệu mất sau khi chạy lại; Nguyên nhân nên kiểm tra: Dữ liệu chỉ trong RAM; Thao tác cụ thể: Đây là hành vi của demo; cần thêm lưu trữ nếu muốn bền vững.
+Hiện tượng: @report.pdf? không lấy tài liệu; Nguyên nhân nên kiểm tra: Bộ tách mention đơn giản giữ cả dấu?; Thao tác cụ thể: Dùng đúng @report.pdf tách riêng bằng khoảng trắng.
+Hiện tượng: /format gây lỗi thiếu đối số; Nguyên nhân nên kiểm tra: Bộ parser chờ ID ở từ thứ hai; Thao tác cụ thể: Gõ đầy đủ /format plan.md.
+Hiện tượng: /summarize không có; Nguyên nhân nên kiểm tra: README/TODO nhắc đến nhưng server chưa đăng ký; Thao tác cụ thể: Dùng /format hoặc tự triển khai prompt tóm tắt riêng.
+Hiện tượng: Lấy prompt xong mà tài liệu chưa đổi; Nguyên nhân nên kiểm tra: Mới dựng message, chưa chạy mô hình/tools; Thao tác cụ thể: Kiểm tra trong CLI hoặc xem vòng lặp host như bài 12.
+Hiện tượng: Autocomplete không như video; Nguyên nhân nên kiểm tra: Giao diện/logic hoàn thành khác hoặc có giới hạn; Thao tác cụ thể: Gõ nguyên ID hoặc nguyên lệnh để tiếp tục bài.
+
+Một lỗi trong phần điều phối mà người học có thể gặp.
+Trong bản COMPLETE đã tải, nhánh except của core/tools.py có tham chiếu tool_output dù biến này có thể chưa được gán nếu call_tool ném ngoại lệ. Nó cũng có thể đánh dấu sai trạng thái lỗi. Nếu đang mở rộng bài và gặp tình huống này, chỉnh nhánh ngoại lệ để trả kết quả với trạng thái "error" trực tiếp, thay vì kiểm tra biến đầu ra chưa chắc tồn tại. Đây là nhận xét khi đọc mã nguồn, chưa phải lỗi đã được tái hiện bằng một lần gọi Anthropic API trong quá trình biên soạn.
+Không cần sửa mọi phần của dự án để hiểu MCP. Khi chẩn đoán, hãy tách thành ba tầng: server có trả đúng không, client có giao tiếp đúng không, cuối cùng host có chuyển schema/message và xử lý tool use đúng không.
+
+Bảng tra nhanh để vừa học vừa làm.
+
+Từ thuật ngữ sang ngôn ngữ dễ hiểu.
+Thuật ngữ: Protocol; Cách hiểu: Quy ước chung về cách hai bên trao đổi.
+Thuật ngữ: Transport; Cách hiểu: Đường chuyển thông điệp, chẳng hạn stdio.
+Thuật ngữ: Host; Cách hiểu: Ứng dụng AI quản lý trải nghiệm người dùng và điều phối.
+Thuật ngữ: Client; Cách hiểu: Phía kết nối tới một MCP server.
+Thuật ngữ: Session; Cách hiểu: Phiên giao tiếp đã khởi tạo và đang được quản lý.
+Thuật ngữ: Schema; Cách hiểu: Mô tả có cấu trúc về dữ liệu đầu vào/đầu ra.
+Thuật ngữ: Decorator; Cách hiểu: Cú pháp @... gắn đăng ký/hành vi vào hàm Python.
+Thuật ngữ: URI; Cách hiểu: Định danh resource; không nhất thiết là URL web.
+Thuật ngữ: Resource template; Cách hiểu: Mẫu URI có tham số như {doc_id}.
+Thuật ngữ: MIME type; Cách hiểu: Nhãn loại nội dung, ví dụ JSON hoặc văn bản.
+Thuật ngữ: Tool use; Cách hiểu: Mô hình đề xuất gọi một công cụ với đối số.
+Thuật ngữ: Prompt message; Cách hiểu: Một thông điệp được tạo từ mẫu, để ứng dụng sử dụng.
+Thuật ngữ: Context; Cách hiểu: Thông tin được đặt vào đầu vào hội thoại của mô hình.
+
+Server khai báo gì, client gọi gì?
+Mục tiêu: Đăng ký và xem tool; Server SDK 1.x: @mcp.tool(...); Client/session SDK 1.x: list_tools().
+Mục tiêu: Chạy tool; Server SDK 1.x: Hàm dưới decorator tool; Client/session SDK 1.x: call_tool(name, arguments).
+Mục tiêu: Resource cố định; Server SDK 1.x: @mcp.resource("docs://documents"); Client/session SDK 1.x: read_resource(AnyUrl(...)).
+Mục tiêu: Resource có tham số; Server SDK 1.x: @mcp.resource("docs://documents/{doc_id}"); Client/session SDK 1.x: Đọc URI đã điền ID.
+Mục tiêu: Xem metadata resource; Server SDK 1.x: Các resource đã đăng ký; Client/session SDK 1.x: list_resources().
+Mục tiêu: Xem template; Server SDK 1.x: Các template đã đăng ký; Client/session SDK 1.x: list_resource_templates().
+Mục tiêu: Đăng ký và xem prompt; Server SDK 1.x: @mcp.prompt(...); Client/session SDK 1.x: list_prompts().
+Mục tiêu: Dựng message từ prompt; Server SDK 1.x: Hàm nhận tham số và trả message; Client/session SDK 1.x: get_prompt(name, arguments).
+
+Ba thao tác phải phân biệt.
+Có một đoạn văn bản mẫu dài 7 dòng, xem trong tài liệu.
+
+Lộ trình ôn một vòng.
+1. Giải thích được vấn đề tích hợp mà MCP giúp chuẩn hóa.
+2. Vẽ đúng host, client, server và mô hình.
+3. Tạo và gọi được hai tool đọc/sửa.
+4. Kiểm chứng sửa bằng đọc lại.
+5. Tạo và đọc được resource cố định, resource template.
+6. Hiểu JSON đi từ chuỗi sang đối tượng Python ở client.
+7. Tạo prompt có tham số và xem message đã dựng.
+8. Phân biệt lấy prompt với thực thi quy trình.
+9. Chạy cả ba luồng tool, @, /format trong dự án chat.
+10. Giải thích được giới hạn của dữ liệu RAM và ví dụ tài liệu giả.
+
+Nguồn, phạm vi đối chiếu và kiểm chứng.
+
+Nguồn chính.
+Các liên kết Mở bài gốc ở từng phần trỏ đúng 14 mục trong khóa đang mở. Nội dung kỹ thuật dựa trên phần bài học hiển thị trong khóa và được diễn giải lại bằng tiếng Việt.
+Ngoài nội dung trang, đã đối chiếu:
+Phụ đề tiếng Anh của Welcome to the course, để xác nhận phạm vi và yêu cầu đầu vào.
+Phụ đề tiếng Anh của Project setup, để khôi phục các bước chỉ có trong video: tải ZIP, giải nén, mở trình soạn thảo, xem README, cấu hình, cài phụ thuộc và chạy thử chatbot.
+README.md, pyproject.toml, uv.lock, main.py, mcp_server.py, mcp_client.py cùng các file điều phối trong thư mục core của cli_project_COMPLETE.zip, tải từ bài Project setup.
+Không đặt liên kết tải ZIP có chữ ký tạm thời trong tài liệu; khi cần tải lại, mở bài Project setup và dùng Downloads để nhận liên kết còn hiệu lực.
+
+Nguồn chính thức để đối chiếu công cụ hiện tại.
+uv: hướng dẫn công cụ quản lý môi trường mà khóa học sử dụng.
+MCP Inspector: xác nhận công cụ kiểm tra và cách khởi chạy hiện tại; giao diện có thể khác video.
+MCP Python SDK: đối chiếu thay đổi API SDK hiện tại, không dùng để âm thầm thay toàn bộ ví dụ khóa học bằng phiên bản mới.
+
+Phân biệt nội dung gốc và phần bổ sung.
+Các chương 1–14 bám theo thứ tự khóa học. Ví dụ tiếng Việt, giải thích từng dòng, mẹo xử lý lỗi, các điểm phát hiện khi đọc mã, bảy câu tự luyện và bài demo hai file là phần bổ sung. Chúng được ghi như vậy để bạn không nhầm với lời giảng nguyên văn hoặc đề đánh giá chính thức.
+Tài liệu mô tả thao tác có thể tái hiện từ nội dung bài học và mã nguồn. Không khẳng định đã quan sát mọi cú nhấp hoặc từng giây trong tất cả video. Phần đánh giá chính thức chỉ được đọc đến câu đầu; không chọn hoặc nộp câu trả lời. Khảo sát không được nộp. Việc mở bài trên Skilljar có thể tự cập nhật trạng thái hoàn thành của bài; dấu hoàn thành không chứng minh người học đã thực hành hoặc đã xem hết video.
+
+Kiểm chứng ví dụ.
+Trạng thái kiểm chứng được ghi sau khi chạy bộ demo độc lập ở trên. Việc này không bao gồm gọi Anthropic API bằng tài khoản của người học, chạy khảo sát, nộp đánh giá hoặc kiểm tra toàn bộ giao diện Inspector.
+Đã kiểm tra thực tế trên Windows, Python 3.11 và mcp==1.26.0:
+File Markdown đọc được bằng UTF-8; đủ 14 mục, 18 đích liên kết nội bộ; 20 khối mã Python đều qua kiểm tra cú pháp.
+Trích xuất đúng hai chương trình từ tài liệu rồi chạy giao tiếp stdio thật: liệt kê tools, đọc, sửa rồi đọc lại và trường hợp tài liệu không tồn tại đều đạt.
+Liệt kê resource/template, đọc JSON và resource theo ID đều đạt.
+Liệt kê prompt, dựng message có plan.md và xác nhận lấy prompt không làm đổi tài liệu đều đạt.
+Không gọi API mô hình trong lần kiểm chứng này.
+Môi trường kiểm tra có phát một cảnh báo về kiểu lifespan từ tổ hợp SDK 1.26.0 và các thư viện phụ thuộc được cài tại thời điểm chạy; các phép kiểm tra giao tiếp và kết quả phía trên vẫn hoàn tất thành công. Điều đó không đảm bảo mọi tổ hợp thư viện hoặc phiên bản SDK mới đều tương thích như nhau.
