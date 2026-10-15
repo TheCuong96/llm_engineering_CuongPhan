@@ -50,21 +50,46 @@ Mỗi thẻ nên trả lời được:
 ```text
 Đọc thẻ "Chuyển ảnh sang WebP" trên bảng Kanban của dự án.
 Chuyển thẻ sang In progress, tạo nhánh theo quy ước trong CLAUDE.md,
-sau đó bắt đầu bước Explore. Chưa sửa mã.
+sau đó bắt đầu bước thu thập yêu cầu. Chưa sửa mã.
 ```
 
-Khi làm xong từng giai đoạn của quy trình ở mục 3, cập nhật trạng thái thẻ tương ứng: bắt đầu Explore → `In progress`, mở PR → `Review`, merge → `Done`.
+Khi làm xong từng giai đoạn của quy trình ở mục 3, cập nhật trạng thái thẻ tương ứng: bắt đầu thu thập yêu cầu → `In progress`, mở PR → `Review`, merge → `Done`. Gắn link diagram và design vào thẻ ngay khi có.
 
 ## 3. Quy trình làm việc cốt lõi
 
-> **Explore → Plan → Code → Commit**
+> **Requirements → Explore → Diagram → Design → Plan → Code → Commit**
 
-Đây là quy trình trung tâm của khóa học. Bắt đầu viết mã ngay thường dẫn đến nhiều vòng sửa sai; khảo sát và lập kế hoạch trước giúp giảm chi phí về sau.
+Quy trình gốc của khóa học là **Explore → Plan → Code → Commit**. Bắt đầu viết mã ngay thường dẫn đến nhiều vòng sửa sai; khảo sát và lập kế hoạch trước giúp giảm chi phí về sau. Ở đây bổ sung thêm ba bước: thu thập yêu cầu trước khi khảo sát, sau đó vẽ diagram và design để thống nhất hướng đi bằng hình ảnh trước khi lập kế hoạch.
 
 - Bài gốc: [Claude Code 101 — Explore, plan, code, commit](https://anthropic.skilljar.com/claude-code-101/469792)
 - Video: [The explore → plan → code → commit workflow](https://www.youtube.com/watch?v=xJQuF02NAK8)
 
-### 3.1 Explore — Khảo sát
+### 3.1 Requirements — Thu thập yêu cầu
+
+Trước khi để AI đọc code, cần làm rõ **vấn đề cần giải quyết** và **thế nào là xong**. Yêu cầu mơ hồ ở bước này sẽ khiến mọi bước sau đi sai hướng.
+
+Phải trả lời các câu hỏi sau:
+
+- Ai dùng tính năng này và họ đang gặp vấn đề gì?
+- Kết quả mong muốn là gì? Hành vi nào người dùng nhìn thấy được?
+- Phạm vi: phần nào nằm trong yêu cầu, phần nào **không** làm lần này?
+- Ràng buộc: deadline, công nghệ, hiệu năng, bảo mật, tương thích ngược.
+- Tiêu chí chấp nhận (acceptance criteria) có thể kiểm tra được.
+- Còn điểm nào chưa rõ cần hỏi lại người yêu cầu?
+
+Có thể để AI phỏng vấn ngược lại bạn thay vì tự viết hết:
+
+**Mẫu prompt:**
+
+```text
+Tôi muốn thêm tính năng xuất báo cáo doanh thu ra Excel.
+Đừng khảo sát code vội. Hãy hỏi tôi từng câu một để làm rõ: ai dùng,
+dữ liệu nào cần xuất, phạm vi không làm, ràng buộc và tiêu chí chấp nhận.
+Khi đủ thông tin, tóm tắt thành danh sách yêu cầu để tôi duyệt
+và cập nhật vào thẻ Kanban.
+```
+
+### 3.2 Explore — Khảo sát
 
 Claude đọc cấu trúc dự án, các tệp liên quan, bài kiểm thử và tài liệu. Không cần đọc mọi thứ; mục tiêu là xác định **thay đổi nằm ở đâu và phụ thuộc vào những gì**. Có thể dùng Plan mode hoặc subagent Explore khi chỉ cần phác họa codebase.
 
@@ -122,11 +147,85 @@ Sau đó đề xuất kế hoạch. Thành công khi test session hiện có vư
 và có thêm test tái hiện lỗi tải lại trang.
 ```
 
-### 3.2 Plan — Lập kế hoạch
+### 3.3 Diagram — Tạo và vẽ sơ đồ
+
+Sau khi khảo sát, vẽ lại luồng hiện tại và luồng sau khi thay đổi. Sơ đồ giúp phát hiện sớm chỗ hiểu sai giữa bạn và AI mà đọc văn bản dài khó thấy.
+
+Chọn loại sơ đồ theo câu hỏi cần trả lời:
+
+| Loại sơ đồ | Dùng khi cần thể hiện |
+| --- | --- |
+| Flowchart | Luồng xử lý, các nhánh điều kiện |
+| Sequence diagram | Thứ tự gọi giữa client, API, service, database |
+| ERD | Bảng dữ liệu và quan hệ giữa chúng |
+| Architecture diagram | Các thành phần hệ thống và cách chúng kết nối |
+| State diagram | Các trạng thái của một đối tượng (ví dụ đơn hàng) |
+
+Công cụ gợi ý:
+
+- **Mermaid** viết ngay trong file Markdown, dễ cho AI tạo và dễ review trong PR.
+- **FigJam, draw.io, Excalidraw** khi cần sơ đồ trình bày cho người khác xem.
+
+**Mẫu prompt:**
+
+```text
+Dựa trên kết quả khảo sát, vẽ sequence diagram bằng Mermaid cho luồng
+xuất báo cáo: hiện tại và sau khi thay đổi. Đánh dấu rõ phần mới thêm.
+Lưu vào docs/diagrams/export-report.md. Chưa sửa mã.
+```
+
+**Ví dụ kết quả:**
+
+```mermaid
+sequenceDiagram
+    participant U as Người dùng
+    participant FE as Frontend
+    participant API as Report API
+    participant DB as Database
+    U->>FE: Bấm "Xuất Excel"
+    FE->>API: GET /reports/revenue/export
+    API->>DB: Truy vấn doanh thu theo kỳ
+    DB-->>API: Dữ liệu
+    API-->>FE: File .xlsx
+    FE-->>U: Tải file xuống
+```
+
+Đọc lại sơ đồ và sửa ngay nếu sai. Sửa sơ đồ rẻ hơn rất nhiều so với sửa code.
+
+### 3.4 Design — Tạo và vẽ thiết kế
+
+Khi thay đổi có giao diện, cần có design trước khi lập kế hoạch code. Với tác vụ không có giao diện (API, script, refactor), thay bằng bản thiết kế kỹ thuật ngắn: interface, cấu trúc dữ liệu, format request/response.
+
+Một design tốt cần có:
+
+- Các màn hình hoặc component bị ảnh hưởng.
+- Đủ trạng thái: mặc định, đang tải, rỗng, lỗi, thành công.
+- Hành vi trên các kích thước màn hình (desktop, mobile).
+- Tận dụng design system, màu, font và component đã có trong dự án.
+
+Công cụ gợi ý:
+
+- **Figma** (có thể kết nối qua MCP để AI đọc design và chuyển thành code).
+- **Prototype HTML** do AI tạo nhanh để xem trực tiếp trên trình duyệt.
+
+**Mẫu prompt:**
+
+```text
+Dựa trên yêu cầu ở thẻ Kanban và sơ đồ docs/diagrams/export-report.md,
+đề xuất design cho nút "Xuất Excel" trên trang báo cáo doanh thu.
+Dùng component và màu có sẵn trong dự án. Thể hiện đủ trạng thái
+mặc định, đang xuất, lỗi và thành công. Tạo prototype HTML để tôi xem trước.
+Chưa sửa mã của ứng dụng.
+```
+
+Chỉ chuyển sang Plan sau khi bạn đã duyệt design.
+
+### 3.5 Plan — Lập kế hoạch
 
 Một kế hoạch tốt cần nêu rõ:
 
 - Mong muốn: thêm tính năng gì, bỏ hoặc thay đổi cái gì.
+- Bám theo yêu cầu, diagram và design đã duyệt ở các bước trước.
 - Lộ trình thực hiện, ví dụ: tạo interface trước → setup state → sử dụng ở đâu.
 - Các tệp dự kiến sửa.
 - Trình tự thực hiện.
@@ -136,7 +235,7 @@ Một kế hoạch tốt cần nêu rõ:
 
 Đây là thời điểm ít tốn kém nhất để điều chỉnh hướng đi. Nếu kế hoạch đụng đến quá nhiều tệp hoặc thêm dependency không cần thiết, hãy thu hẹp phạm vi trước khi triển khai.
 
-### 3.3 Code — Thực thi có kiểm chứng
+### 3.6 Code — Thực thi có kiểm chứng
 
 Sau khi duyệt kế hoạch, Claude triển khai theo từng bước. Để giai đoạn này ổn định:
 
@@ -146,7 +245,7 @@ Sau khi duyệt kế hoạch, Claude triển khai theo từng bước. Để gia
 
 Nếu một lỗi lặp lại do quy ước dự án, hãy ghi quy ước vào `CLAUDE.md` thay vì sửa thủ công trong mọi phiên.
 
-### 3.4 Commit — Rà soát và đóng gói thay đổi
+### 3.7 Commit — Rà soát và đóng gói thay đổi
 
 Trước khi commit:
 
