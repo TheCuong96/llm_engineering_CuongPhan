@@ -1,13 +1,61 @@
-
 # Quy tắc đặt câu hỏi và làm việc với AI
 
 ## 1. Chuẩn bị dự án và yêu cầu
 
-- Tạo `CLAUDE.md`, skill tại `skill/skill.md` và hook phù hợp với dự án.
+- Tạo `CLAUDE.md`, skill tại `.claude/skills/<tên-skill>/SKILL.md` và hook phù hợp với dự án.
 - Nhờ AI soạn prompt lập kế hoạch cho yêu cầu, sau đó đọc lại để xác nhận kế hoạch đúng với mục tiêu trước khi triển khai.
-## 1.1 Tạo plan đề xuất tạo .claude thông qua lệnh plugin của anthropic: `/claude-code-setup:claude-automation-recommender`
 
-## 2. Quy trình làm việc cốt lõi
+### 1.1 Đề xuất cấu hình `.claude` bằng plugin của Anthropic
+
+Chạy lệnh sau để AI phân tích codebase và đề xuất hook, subagent, skill, plugin, MCP phù hợp:
+
+```text
+/claude-code-setup:claude-automation-recommender
+```
+
+## 2. Tạo và kết nối Kanban
+
+> **Mỗi yêu cầu là một thẻ trên bảng Kanban trước khi bắt đầu Explore.**
+
+Bảng Kanban giúp theo dõi tiến độ, tránh làm nhiều việc cùng lúc và cho AI một nguồn ngữ cảnh thống nhất về task: mục tiêu, tiêu chí hoàn thành, nhánh và PR liên quan.
+
+### 2.1 Tạo bảng
+
+- Chọn công cụ: GitHub Projects, Jira, Linear, Trello...
+- Tạo các cột cơ bản: `Backlog` → `To do` → `In progress` → `Review` → `Done`.
+- Giới hạn số thẻ trong `In progress` (ví dụ tối đa 2) để tập trung hoàn thành từng việc.
+
+### 2.2 Kết nối bảng với AI
+
+- Kết nối qua MCP để AI đọc và cập nhật thẻ, ví dụ với GitHub:
+
+  ```text
+  claude mcp add --transport http github https://api.githubcopilot.com/mcp/
+  ```
+
+- Hoặc dùng CLI có sẵn, ví dụ `gh project` cho GitHub Projects.
+- Ghi vào `CLAUDE.md` bảng nào đang dùng và quy ước đặt tên thẻ, nhánh (ví dụ nhánh `feature/<mã-thẻ>-<mô-tả-ngắn>`).
+
+### 2.3 Nội dung một thẻ
+
+Mỗi thẻ nên trả lời được:
+
+- Mục tiêu: thêm, bỏ hoặc thay đổi cái gì.
+- Phạm vi: dự án hoặc phần nào của dự án.
+- Tiêu chí hoàn thành có thể kiểm tra.
+- Liên kết: nhánh, PR, tài liệu hoặc issue liên quan.
+
+**Ví dụ yêu cầu:**
+
+```text
+Đọc thẻ "Chuyển ảnh sang WebP" trên bảng Kanban của dự án.
+Chuyển thẻ sang In progress, tạo nhánh theo quy ước trong CLAUDE.md,
+sau đó bắt đầu bước Explore. Chưa sửa mã.
+```
+
+Khi làm xong từng giai đoạn của quy trình ở mục 3, cập nhật trạng thái thẻ tương ứng: bắt đầu Explore → `In progress`, mở PR → `Review`, merge → `Done`.
+
+## 3. Quy trình làm việc cốt lõi
 
 > **Explore → Plan → Code → Commit**
 
@@ -16,19 +64,20 @@
 - Bài gốc: [Claude Code 101 — Explore, plan, code, commit](https://anthropic.skilljar.com/claude-code-101/469792)
 - Video: [The explore → plan → code → commit workflow](https://www.youtube.com/watch?v=xJQuF02NAK8)
 
-### Explore — Khảo sát
+### 3.1 Explore — Khảo sát
 
 Claude đọc cấu trúc dự án, các tệp liên quan, bài kiểm thử và tài liệu. Không cần đọc mọi thứ; mục tiêu là xác định **thay đổi nằm ở đâu và phụ thuộc vào những gì**. Có thể dùng Plan mode hoặc subagent Explore khi chỉ cần phác họa codebase.
 
-Phải trả lời các câu hỏi này khi khảo sát khi phát triển tính năng:
+#### Khi phát triển tính năng
 
-- Xác định mong muốn: thêm tính năng gì, bỏ hoặc thay đổi cái gì...
-- Làm ở đâu trong dự án nào hoặc trong phần nào của dự án
-- Tính năng hoặc chức năng đó phù hợp với model LLM nào làm là tốt  nhất
-- có cần note hoặc ghi chú lại các docx.
-- có muốn làm theo lộ trình hoặc tài liệu nào đã được setup sẵn hay không
-- có cần kết nối với MCP nào không.
+Phải trả lời các câu hỏi sau:
 
+- Mong muốn là gì: thêm tính năng gì, bỏ hoặc thay đổi cái gì?
+- Làm ở dự án nào, hoặc phần nào của dự án?
+- Model LLM nào phù hợp nhất để làm tính năng hoặc chức năng đó?
+- Có cần ghi chú hoặc viết tài liệu (docx) không?
+- Có làm theo lộ trình hoặc tài liệu đã được chuẩn bị sẵn không?
+- Có cần kết nối với MCP nào không?
 
 **Ví dụ yêu cầu:**
 
@@ -37,7 +86,7 @@ Khảo sát pipeline tải ảnh. Xác định điểm thích hợp để chuy�
 dependency đang dùng và test liên quan. Chỉ đọc và báo cáo, chưa sửa mã.
 ```
 
-Mẫu prompt:
+**Mẫu prompt:**
 
 ```text
 Hãy khảo sát luồng thanh toán và lập kế hoạch tách logic tính thuế
@@ -50,12 +99,13 @@ Kế hoạch phải nêu:
 - rủi ro tương thích;
 - tiêu chí hoàn thành có thể kiểm tra.
 ```
-Phải trả lời các câu hỏi này khi khảo sát khi sửa lỗi:
 
-- Tìm nguyên nhân của lỗi và đề xuất cách sửa: lỗi là lỗi gì có thể là lỗi business hoặc lỗi do code hoặc lỗi từ framework hoặc lỗi vì thiếu tính năng
+#### Khi sửa lỗi
 
+Phải trả lời các câu hỏi sau:
 
-### Ví dụ thực tế
+- Nguyên nhân của lỗi là gì? Phân loại lỗi: lỗi business, lỗi code, lỗi từ framework hay do thiếu tính năng.
+- Đề xuất cách sửa phù hợp với loại lỗi đó.
 
 Thay vì hỏi chung chung:
 
@@ -72,12 +122,12 @@ Sau đó đề xuất kế hoạch. Thành công khi test session hiện có vư
 và có thêm test tái hiện lỗi tải lại trang.
 ```
 
-### Plan — Lập kế hoạch
+### 3.2 Plan — Lập kế hoạch
 
 Một kế hoạch tốt cần nêu rõ:
 
-- Xác định mong muốn: thêm tính năng gì, bỏ hoặc thay đổi cái gì...
-- Lộ trình thực hiện: ví dụ tạo interface trước -> setup state -> sử dụng ở đâu.
+- Mong muốn: thêm tính năng gì, bỏ hoặc thay đổi cái gì.
+- Lộ trình thực hiện, ví dụ: tạo interface trước → setup state → sử dụng ở đâu.
 - Các tệp dự kiến sửa.
 - Trình tự thực hiện.
 - Rủi ro và trường hợp biên.
@@ -86,7 +136,7 @@ Một kế hoạch tốt cần nêu rõ:
 
 Đây là thời điểm ít tốn kém nhất để điều chỉnh hướng đi. Nếu kế hoạch đụng đến quá nhiều tệp hoặc thêm dependency không cần thiết, hãy thu hẹp phạm vi trước khi triển khai.
 
-### Code — Thực thi có kiểm chứng
+### 3.3 Code — Thực thi có kiểm chứng
 
 Sau khi duyệt kế hoạch, Claude triển khai theo từng bước. Để giai đoạn này ổn định:
 
@@ -96,7 +146,7 @@ Sau khi duyệt kế hoạch, Claude triển khai theo từng bước. Để gia
 
 Nếu một lỗi lặp lại do quy ước dự án, hãy ghi quy ước vào `CLAUDE.md` thay vì sửa thủ công trong mọi phiên.
 
-### Commit — Rà soát và đóng gói thay đổi
+### 3.4 Commit — Rà soát và đóng gói thay đổi
 
 Trước khi commit:
 
@@ -108,7 +158,7 @@ Trước khi commit:
 
 Quy trình không kết thúc chỉ vì AI thông báo đã xong. Thay đổi chỉ nên được xem là hoàn tất sau khi đã qua rà soát của con người và các bước kiểm chứng.
 
-## 3. Một prompt rõ ràng cần có gì?
+## 4. Một prompt rõ ràng cần có gì?
 
 1. **Mục tiêu:** Bạn muốn hoàn thành việc gì?
 2. **Ngữ cảnh:** Khu vực hoặc luồng nào liên quan? Dự án dùng công nghệ gì?
@@ -117,11 +167,11 @@ Quy trình không kết thúc chỉ vì AI thông báo đã xong. Thay đổi ch
 5. **Tiêu chí thành công:** Cần chạy test/build nào? Hành vi nào phải hoạt động?
 6. **Mức tự chủ:** Chỉ phân tích, lập kế hoạch hay được phép thực hiện?
 
-### Ví dụ thêm tính năng dark mode
+### Ví dụ: thêm tính năng dark mode
 
 Yêu cầu không chỉ là “thêm dark mode”, mà cần nói vị trí công tắc, phạm vi toàn ứng dụng và yêu cầu màu tương phản dựa trên theme sáng hiện có. Trong Plan mode, Claude tìm cấu trúc theme, hỏi điều chưa rõ và đưa ra kế hoạch. Bạn duyệt kế hoạch trước khi cho phép thực thi.
 
-Mẫu prompt Việt hóa:
+**Mẫu prompt:**
 
 ```text
 Ứng dụng cần dark mode trên toàn bộ giao diện.
@@ -131,9 +181,11 @@ phù hợp với theme sáng hiện tại. Trước tiên dùng Plan mode để 
 Chưa viết mã cho đến khi tôi duyệt kế hoạch.
 ```
 
-### Cách phản hồi một kế hoạch chưa tốt
+## 5. Cách phản hồi một kế hoạch chưa tốt
 
-Đừng nói “làm lại”. Hãy chỉ ra phần cần sửa:
+Đừng chỉ nói “làm lại”. Hãy chỉ rõ phần cần thay đổi và phần cần giữ nguyên.
+
+**Ví dụ:**
 
 ```text
 Giữ nguyên bước 1 và 2. Ở bước 3, không thêm dependency mới;
@@ -141,27 +193,19 @@ hãy tận dụng CSS variables hiện có. Bổ sung kiểm thử cho việc l�
 theme sau khi tải lại trang.
 ```
 
-## 4. Cách phản hồi một kế hoạch chưa tốt
-
-Đừng chỉ nói “làm lại”. Hãy chỉ rõ phần cần thay đổi và phần cần giữ nguyên.
-
-**Ví dụ:**
-
-> Giữ nguyên bước 1 và 2. Ở bước 3, không thêm dependency mới; hãy tận dụng CSS variables hiện có. Bổ sung kiểm thử cho việc lưu lựa chọn theme sau khi tải lại trang.
-
-## 5. Kiểm tra trước khi push
+## 6. Kiểm tra trước khi push
 
 Sau khi hoàn thành thay đổi:
 
 - [ ] Chạy thử và xác nhận hành vi mới hoạt động.
 - [ ] Kiểm tra cả phần code thay đổi lẫn các phần liên quan không thay đổi.
-- [ ] Đối chiếu phạm vi thay đổi với yêu cầu; xác nhận không sửa ngoài phạm vi.
+- [ ] Đối chiếu phạm vi thay đổi với yêu cầu và tiêu chí trên thẻ Kanban; xác nhận không sửa ngoài phạm vi.
 - [ ] Sau khi kiểm tra xong, push lên một nhánh riêng cho task. Nhánh này có thể xóa khi không còn cần thiết.
 
-## 6. Rà soát lại sau khi push lên GitHub
+## 7. Rà soát lại sau khi push lên GitHub
 
 1. Nhờ AI trên web kiểm tra code vừa push và nắm ngữ cảnh codebase.
 2. Nếu AI phát hiện vấn đề, yêu cầu viết prompt cụ thể để sửa vấn đề đó.
 3. Đưa prompt xuống IDE để AI sửa code.
 4. Kiểm tra và push phần sửa lên GitHub.
-5. Lặp lại việc rà soát cho đến khi AI không còn báo vấn đề.
+5. Lặp lại việc rà soát cho đến khi AI không còn báo vấn đề, rồi chuyển thẻ Kanban sang `Done`.
