@@ -15,9 +15,9 @@ Chạy lệnh sau để AI phân tích codebase và đề xuất hook, subagent,
 
 ## 2. Quy trình làm việc cốt lõi
 
-> **Requirements → Explore → Critique → Diagram → Design → Kanban → Telegram → Plan → Code → Docs → Commit**
+> **Requirements → Explore → Critique → Diagram → Design → Kanban → Telegram → Plan → Breakdown → Code → Docs → Commit**
 
-Quy trình gốc của khóa học là **Explore → Plan → Code → Commit**. Bắt đầu viết mã ngay thường dẫn đến nhiều vòng sửa sai; khảo sát và lập kế hoạch trước giúp giảm chi phí về sau. Ở đây bổ sung thêm bảy bước: thu thập yêu cầu trước khi khảo sát; phản biện sau khi khảo sát để tìm chỗ sai, chỗ thiếu và chỗ chưa quyết định; vẽ diagram và design để thống nhất hướng đi bằng hình ảnh; đưa toàn bộ kết quả lên thẻ Kanban; kết nối Telegram để giao việc và nhận thông báo từ xa trước khi lập kế hoạch; và sau khi code xong thì cập nhật tài liệu cấu trúc, sơ đồ, luồng logic cho khớp với code thực tế.
+Quy trình gốc của khóa học là **Explore → Plan → Code → Commit**. Bắt đầu viết mã ngay thường dẫn đến nhiều vòng sửa sai; khảo sát và lập kế hoạch trước giúp giảm chi phí về sau. Ở đây bổ sung thêm tám bước: thu thập yêu cầu trước khi khảo sát; phản biện sau khi khảo sát để tìm chỗ sai, chỗ thiếu và chỗ chưa quyết định; vẽ diagram và design để thống nhất hướng đi bằng hình ảnh; đưa toàn bộ kết quả lên thẻ Kanban; kết nối Telegram để giao việc và nhận thông báo từ xa trước khi lập kế hoạch; phân tích và chia kế hoạch thành các task nhỏ trước khi code; và sau khi code xong thì cập nhật tài liệu cấu trúc, sơ đồ, luồng logic cho khớp với code thực tế.
 
 - Bài gốc: [Claude Code 101 — Explore, plan, code, commit](https://anthropic.skilljar.com/claude-code-101/469792)
 - Video: [The explore → plan → code → commit workflow](https://www.youtube.com/watch?v=xJQuF02NAK8)
@@ -333,9 +333,61 @@ Một kế hoạch tốt cần nêu rõ:
 
 Đây là thời điểm ít tốn kém nhất để điều chỉnh hướng đi. Nếu kế hoạch đụng đến quá nhiều tệp hoặc thêm dependency không cần thiết, hãy thu hẹp phạm vi trước khi triển khai.
 
-### 2.9 Code — Thực thi có kiểm chứng
+### 2.9 Breakdown — Phân tích và phân mảnh công việc
 
-Sau khi duyệt kế hoạch, Claude triển khai theo từng bước. Để giai đoạn này ổn định:
+> **Chia kế hoạch lớn thành các task nhỏ. Mỗi task phải làm, kiểm tra và commit được độc lập.**
+
+Plan trả lời câu hỏi "làm gì và theo hướng nào". Bước này trả lời "làm theo thứ tự nào và mỗi lần làm bao nhiêu". Nếu giao cả một kế hoạch lớn trong một lượt, AI dễ bị quá tải ngữ cảnh và sửa lan sang nhiều tệp. Diff sinh ra vừa khó review, vừa khó tìm chỗ hỏng khi test lỗi.
+
+#### Phân tích
+
+- **Các phần cấu thành:** dữ liệu, logic nghiệp vụ, API, giao diện, test, tài liệu.
+- **Phụ thuộc:** task nào phải xong trước. Ví dụ: kiểu dữ liệu và interface trước, rồi đến logic, sau cùng là giao diện.
+- **Rủi ro cao hoặc chưa chắc chắn:** đưa lên làm sớm. Nếu hướng đi sai thì phát hiện khi chưa tốn nhiều công.
+- **Có thể làm song song:** những task này giao được cho subagent hoặc làm trên một git worktree riêng.
+
+#### Một task tốt cần
+
+- **Nhỏ:** xong trong một phiên, chạm ít tệp, diff đọc hết trong vài phút.
+- **Độc lập:** làm xong task nào thì ứng dụng vẫn build được và test vẫn qua, không để lại code dang dở.
+- **Kiểm chứng được:** có tiêu chí hoàn thành và lệnh kiểm tra cụ thể.
+- **Có đầu ra rõ ràng:** một commit hoặc một PR nhỏ.
+
+Nên chia theo **lát cắt dọc (vertical slice)** thay vì theo tầng. Mỗi task đi xuyên từ dữ liệu đến giao diện, nhưng chỉ cho một trường hợp nhỏ, nên chạy thử được ngay. Ví dụ: làm "xuất một kỳ, ít dòng" trước, rồi mới làm "chạy nền cho dữ liệu lớn".
+
+**Mẫu prompt:**
+
+```text
+Dựa trên kế hoạch đã duyệt cho thẻ "Xuất báo cáo doanh thu ra Excel",
+chia thành các task nhỏ theo lát cắt dọc. Với mỗi task, ghi:
+- mô tả ngắn và các tệp dự kiến sửa;
+- task phụ thuộc;
+- tiêu chí hoàn thành và lệnh kiểm tra.
+Đưa task có rủi ro cao lên sớm, đánh dấu task có thể làm song song.
+Mỗi task phải để ứng dụng ở trạng thái build và test được.
+Thêm danh sách task thành checklist trên thẻ Kanban. Chưa sửa mã.
+```
+
+**Ví dụ kết quả:**
+
+| # | Task | Phụ thuộc | Kiểm tra |
+| --- | --- | --- | --- |
+| 1 | Hàm truy vấn doanh thu theo kỳ, kèm unit test | — | Unit test của hàm truy vấn qua |
+| 2 | API `GET /reports/revenue/export` trả về file `.xlsx` (dữ liệu nhỏ, chỉ Admin và Kế toán) | 1 | Test API: đúng header, đúng số dòng, role khác nhận 403 |
+| 3 | Nút "Xuất Excel" với các trạng thái đang xuất, lỗi, thành công | 2 | Mở trình duyệt, tải được file |
+| 4 | Chạy nền khi vượt 50.000 dòng, gửi link tải khi xong | 2 | Test với 500.000 dòng dữ liệu giả |
+
+Task 3 và 4 có thể làm song song.
+
+Trong lúc thực hiện:
+
+- Làm lần lượt từng task: code, chạy test, xem diff, commit, rồi mới sang task tiếp.
+- Đánh dấu task xong trên checklist của thẻ Kanban.
+- Nếu một task phình to quá dự kiến, dừng lại và chia nhỏ tiếp thay vì cố làm cho xong.
+
+### 2.10 Code — Thực thi có kiểm chứng
+
+Sau khi duyệt kế hoạch và danh sách task, Claude triển khai lần lượt từng task. Để giai đoạn này ổn định:
 
 - Định nghĩa “hoàn thành” bằng kết quả có thể quan sát: test nào phải qua, đầu ra nào phải xuất hiện.
 - Cấp công cụ phù hợp. Ví dụ, tác vụ giao diện cần có khả năng mở và kiểm tra trình duyệt.
@@ -343,7 +395,7 @@ Sau khi duyệt kế hoạch, Claude triển khai theo từng bước. Để gia
 
 Nếu một lỗi lặp lại do quy ước dự án, hãy ghi quy ước vào `CLAUDE.md` thay vì sửa thủ công trong mọi phiên.
 
-### 2.10 Docs — Cập nhật cấu trúc, sơ đồ, luồng logic của source code
+### 2.11 Docs — Cập nhật cấu trúc, sơ đồ, luồng logic của source code
 
 > **Code đã đổi thì tài liệu cũng phải đổi theo, trong cùng một commit hoặc PR.**
 
@@ -372,7 +424,7 @@ Liệt kê những chỗ code khác với kế hoạch ban đầu. Không sửa 
 
 Danh sách "những chỗ khác với kế hoạch" rất đáng đọc: nó cho biết AI đã tự quyết định những gì trong lúc code, để bạn xác nhận hoặc yêu cầu sửa trước khi commit.
 
-### 2.11 Commit — Rà soát và đóng gói thay đổi
+### 2.12 Commit — Rà soát và đóng gói thay đổi
 
 Trước khi commit:
 
