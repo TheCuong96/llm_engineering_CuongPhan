@@ -15,9 +15,9 @@ Chạy lệnh sau để AI phân tích codebase và đề xuất hook, subagent,
 
 ## 2. Quy trình làm việc cốt lõi
 
-> **Requirements → Explore → Diagram → Design → Kanban → Telegram → Plan → Code → Docs → Commit**
+> **Requirements → Explore → Critique → Diagram → Design → Kanban → Telegram → Plan → Code → Docs → Commit**
 
-Quy trình gốc của khóa học là **Explore → Plan → Code → Commit**. Bắt đầu viết mã ngay thường dẫn đến nhiều vòng sửa sai; khảo sát và lập kế hoạch trước giúp giảm chi phí về sau. Ở đây bổ sung thêm sáu bước: thu thập yêu cầu trước khi khảo sát; vẽ diagram và design để thống nhất hướng đi bằng hình ảnh; đưa toàn bộ kết quả lên thẻ Kanban; kết nối Telegram để giao việc và nhận thông báo từ xa trước khi lập kế hoạch; và sau khi code xong thì cập nhật tài liệu cấu trúc, sơ đồ, luồng logic cho khớp với code thực tế.
+Quy trình gốc của khóa học là **Explore → Plan → Code → Commit**. Bắt đầu viết mã ngay thường dẫn đến nhiều vòng sửa sai; khảo sát và lập kế hoạch trước giúp giảm chi phí về sau. Ở đây bổ sung thêm bảy bước: thu thập yêu cầu trước khi khảo sát; phản biện sau khi khảo sát để tìm chỗ sai, chỗ thiếu và chỗ chưa quyết định; vẽ diagram và design để thống nhất hướng đi bằng hình ảnh; đưa toàn bộ kết quả lên thẻ Kanban; kết nối Telegram để giao việc và nhận thông báo từ xa trước khi lập kế hoạch; và sau khi code xong thì cập nhật tài liệu cấu trúc, sơ đồ, luồng logic cho khớp với code thực tế.
 
 - Bài gốc: [Claude Code 101 — Explore, plan, code, commit](https://anthropic.skilljar.com/claude-code-101/469792)
 - Video: [The explore → plan → code → commit workflow](https://www.youtube.com/watch?v=xJQuF02NAK8)
@@ -105,7 +105,53 @@ Sau đó đề xuất kế hoạch. Thành công khi test session hiện có vư
 và có thêm test tái hiện lỗi tải lại trang.
 ```
 
-### 2.3 Diagram — Tạo và vẽ sơ đồ
+### 2.3 Critique — Tư duy phản biện
+
+> **Trước khi vẽ sơ đồ và thiết kế, phải tìm ra chỗ sai, chỗ thiếu và chỗ chưa quyết định.**
+
+AI thường đồng ý với người dùng rồi làm tiếp. Ở bước này, bạn yêu cầu AI đóng vai người phản biện: chủ động tìm điểm yếu trong yêu cầu, trong hướng tiếp cận và trong dự án hiện tại. Phát hiện lỗi lúc này chỉ tốn sửa vài dòng tài liệu. Nếu để đến sau khi code xong, phải sửa lại cả sơ đồ, design và code.
+
+Cần soi theo bốn nhóm:
+
+- **Sai:** giả định không khớp với code thực tế, yêu cầu mâu thuẫn nhau, hướng tiếp cận không giải quyết được vấn đề gốc, chọn sai công nghệ hoặc model.
+- **Thiếu:** trường hợp biên, xử lý lỗi, phân quyền, bảo mật, hiệu năng, dữ liệu cũ (migration), test, tài liệu, nhóm người dùng bị ảnh hưởng nhưng chưa được nhắc tới.
+- **Chưa quyết định:** chỗ có nhiều cách làm nhưng chưa ai chốt (ví dụ xuất đồng bộ hay chạy nền, giới hạn bao nhiêu dòng), những chỗ ghi "để sau tính".
+- **Rủi ro:** điều có thể làm hỏng tính năng đang chạy, phụ thuộc bên ngoài, chi phí, thay đổi khó quay lui.
+
+Câu hỏi gợi ý:
+
+- Nếu dự án này thất bại, nguyên nhân có khả năng nhất là gì? (pre-mortem)
+- Giả định nào mà nếu sai thì toàn bộ hướng đi phải làm lại?
+- Có cách đơn giản hơn để đạt cùng mục tiêu không?
+- Yêu cầu nào hiện chưa kiểm tra được?
+
+**Mẫu prompt:**
+
+```text
+Đóng vai người phản biện khó tính. Đọc docs/requirements/export-report.md
+và kết quả khảo sát. Đừng đồng ý cho qua, hãy tìm:
+- chỗ sai: giả định không khớp với code, yêu cầu mâu thuẫn;
+- chỗ thiếu: trường hợp biên, lỗi, phân quyền, hiệu năng, dữ liệu lớn, test;
+- chỗ chưa có quyết định rõ ràng;
+- rủi ro ảnh hưởng đến tính năng đang chạy.
+Mỗi vấn đề ghi mức độ (chặn / quan trọng / nhỏ), lý do và đề xuất.
+Sau đó hỏi tôi từng câu một về các điểm cần quyết định.
+Lưu kết quả vào docs/decisions/export-report.md. Chưa sửa mã.
+```
+
+**Ví dụ kết quả:**
+
+| Mức độ | Vấn đề | Đề xuất |
+| --- | --- | --- |
+| Chặn | Chưa rõ ai được phép xuất báo cáo doanh thu | Chốt quyền: chỉ Admin và Kế toán |
+| Quan trọng | Kỳ có 500.000 dòng sẽ bị timeout nếu xuất đồng bộ | Chạy nền, gửi link tải khi xong |
+| Nhỏ | Chưa quy định định dạng số tiền trong file | Dùng định dạng VND, không có số lẻ |
+
+Bạn xử lý từng mục theo một trong ba cách: sửa lại yêu cầu, chốt quyết định, hoặc chấp nhận rủi ro và ghi chú lý do. Chỉ chuyển sang bước tiếp theo khi không còn mục **chặn** nào.
+
+Mẹo: nên phản biện trong một phiên mới hoặc nhờ một subagent làm. AI vừa viết yêu cầu sẽ có xu hướng bảo vệ chính những gì nó đã viết.
+
+### 2.4 Diagram — Tạo và vẽ sơ đồ
 
 Sau khi khảo sát, vẽ lại luồng hiện tại và luồng sau khi thay đổi. Sơ đồ giúp phát hiện sớm chỗ hiểu sai giữa bạn và AI mà đọc văn bản dài khó thấy.
 
@@ -150,7 +196,7 @@ sequenceDiagram
 
 Đọc lại sơ đồ và sửa ngay nếu sai. Sửa sơ đồ rẻ hơn rất nhiều so với sửa code.
 
-### 2.4 Design — Tạo và vẽ thiết kế
+### 2.5 Design — Tạo và vẽ thiết kế
 
 Khi thay đổi có giao diện, cần có design trước khi lập kế hoạch code. Với tác vụ không có giao diện (API, script, refactor), thay bằng bản thiết kế kỹ thuật ngắn: interface, cấu trúc dữ liệu, format request/response.
 
@@ -178,7 +224,7 @@ Chưa sửa mã của ứng dụng.
 
 Chỉ chuyển sang bước tiếp theo sau khi bạn đã duyệt design.
 
-### 2.5 Kanban — Tạo và kết nối bảng công việc
+### 2.6 Kanban — Tạo và kết nối bảng công việc
 
 > **Mỗi yêu cầu đã duyệt là một thẻ trên bảng Kanban trước khi bắt đầu Plan.**
 
@@ -208,7 +254,7 @@ Mỗi thẻ nên trả lời được:
 - Mục tiêu: thêm, bỏ hoặc thay đổi cái gì.
 - Phạm vi: dự án hoặc phần nào của dự án.
 - Tiêu chí hoàn thành có thể kiểm tra.
-- Liên kết: tài liệu yêu cầu, diagram, design, nhánh, PR hoặc issue liên quan.
+- Liên kết: tài liệu yêu cầu, các quyết định đã chốt ở bước phản biện, diagram, design, nhánh, PR hoặc issue liên quan.
 
 Nếu tính năng lớn, tách thành nhiều thẻ nhỏ, mỗi thẻ có thể hoàn thành và review độc lập.
 
@@ -223,7 +269,7 @@ docs/diagrams/export-report.md và prototype design đã duyệt.
 
 Khi làm xong từng giai đoạn tiếp theo, cập nhật trạng thái thẻ tương ứng: tạo thẻ → `To do`, bắt đầu Plan → `In progress` và tạo nhánh theo quy ước, mở PR → `Review`, merge → `Done`.
 
-### 2.6 Telegram — Giao việc và nhận thông báo từ xa
+### 2.7 Telegram — Giao việc và nhận thông báo từ xa
 
 > **Không cần ngồi trước máy: giao việc, duyệt kế hoạch và xem tiến độ qua Telegram.**
 
@@ -254,7 +300,7 @@ Nhắn cho bot giống như gõ prompt trong terminal, vẫn theo nguyên tắc 
 
 ```text
 Đọc thẻ "Xuất báo cáo doanh thu ra Excel" trên Kanban.
-Chuyển thẻ sang In progress và lập kế hoạch theo mục 2.7.
+Chuyển thẻ sang In progress và lập kế hoạch theo mục 2.8.
 Gửi kế hoạch qua đây để tôi duyệt. Chưa sửa mã.
 ```
 
@@ -272,12 +318,12 @@ Gửi kế hoạch qua đây để tôi duyệt. Chưa sửa mã.
 - Chỉ cho phép tài khoản của bạn (allowlist) ra lệnh. Ai nhắn được cho bot là có thể điều khiển AI trên máy bạn.
 - Việc quan trọng như push, merge, xóa dữ liệu vẫn nên duyệt rõ ràng, không để AI tự làm chỉ vì có một tin nhắn yêu cầu.
 
-### 2.7 Plan — Lập kế hoạch
+### 2.8 Plan — Lập kế hoạch
 
 Một kế hoạch tốt cần nêu rõ:
 
 - Mong muốn: thêm tính năng gì, bỏ hoặc thay đổi cái gì.
-- Bám theo yêu cầu, diagram và design đã gắn trên thẻ Kanban.
+- Bám theo yêu cầu, các quyết định đã chốt, diagram và design đã gắn trên thẻ Kanban.
 - Lộ trình thực hiện, ví dụ: tạo interface trước → setup state → sử dụng ở đâu.
 - Các tệp dự kiến sửa.
 - Trình tự thực hiện.
@@ -287,7 +333,7 @@ Một kế hoạch tốt cần nêu rõ:
 
 Đây là thời điểm ít tốn kém nhất để điều chỉnh hướng đi. Nếu kế hoạch đụng đến quá nhiều tệp hoặc thêm dependency không cần thiết, hãy thu hẹp phạm vi trước khi triển khai.
 
-### 2.8 Code — Thực thi có kiểm chứng
+### 2.9 Code — Thực thi có kiểm chứng
 
 Sau khi duyệt kế hoạch, Claude triển khai theo từng bước. Để giai đoạn này ổn định:
 
@@ -297,7 +343,7 @@ Sau khi duyệt kế hoạch, Claude triển khai theo từng bước. Để gia
 
 Nếu một lỗi lặp lại do quy ước dự án, hãy ghi quy ước vào `CLAUDE.md` thay vì sửa thủ công trong mọi phiên.
 
-### 2.9 Docs — Cập nhật cấu trúc, sơ đồ, luồng logic của source code
+### 2.10 Docs — Cập nhật cấu trúc, sơ đồ, luồng logic của source code
 
 > **Code đã đổi thì tài liệu cũng phải đổi theo, trong cùng một commit hoặc PR.**
 
@@ -306,7 +352,7 @@ Khi triển khai, code thực tế thường lệch một chút so với diagram
 Cần rà soát và cập nhật:
 
 - **Cấu trúc source code:** thư mục, module, tệp mới thêm hoặc đã xóa, và vai trò của từng phần (ví dụ trong `README.md` hoặc `docs/ARCHITECTURE.md`).
-- **Sơ đồ:** cập nhật các diagram ở bước 2.3 (ví dụ `docs/diagrams/export-report.md`) theo đúng luồng đã code, bỏ phần "hiện tại" cũ nếu không còn đúng.
+- **Sơ đồ:** cập nhật các diagram ở bước 2.4 (ví dụ `docs/diagrams/export-report.md`) theo đúng luồng đã code, bỏ phần "hiện tại" cũ nếu không còn đúng.
 - **Luồng logic:** mô tả ngắn luồng xử lý chính, điều kiện rẽ nhánh, cách xử lý lỗi và các trường hợp biên đã xử lý.
 - **Interface:** API, tham số, format dữ liệu vào và ra nếu có thay đổi.
 - **`CLAUDE.md`:** nếu có quy ước mới (lệnh build, test, cách đặt tên...), ghi lại để AI dùng ở các phiên sau.
@@ -326,7 +372,7 @@ Liệt kê những chỗ code khác với kế hoạch ban đầu. Không sửa 
 
 Danh sách "những chỗ khác với kế hoạch" rất đáng đọc: nó cho biết AI đã tự quyết định những gì trong lúc code, để bạn xác nhận hoặc yêu cầu sửa trước khi commit.
 
-### 2.10 Commit — Rà soát và đóng gói thay đổi
+### 2.11 Commit — Rà soát và đóng gói thay đổi
 
 Trước khi commit:
 
