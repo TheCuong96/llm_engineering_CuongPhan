@@ -15,9 +15,9 @@ Chạy lệnh sau để AI phân tích codebase và đề xuất hook, subagent,
 
 ## 2. Quy trình làm việc cốt lõi
 
-> **Requirements → Explore → Critique → Diagram → Design → Kanban → Telegram → Plan → Breakdown → Code → Docs → Commit**
+> **Requirements → Explore → Critique → Diagram → Flow → Design → Kanban → Telegram → Plan → Breakdown → Code → Docs → Commit**
 
-Quy trình gốc của khóa học là **Explore → Plan → Code → Commit**. Bắt đầu viết mã ngay thường dẫn đến nhiều vòng sửa sai; khảo sát và lập kế hoạch trước giúp giảm chi phí về sau. Ở đây bổ sung thêm tám bước: thu thập yêu cầu trước khi khảo sát; phản biện sau khi khảo sát để tìm chỗ sai, chỗ thiếu và chỗ chưa quyết định; vẽ diagram và design để thống nhất hướng đi bằng hình ảnh; đưa toàn bộ kết quả lên thẻ Kanban; kết nối Telegram để giao việc và nhận thông báo từ xa trước khi lập kế hoạch; phân tích và chia kế hoạch thành các task nhỏ trước khi code; và sau khi code xong thì cập nhật tài liệu cấu trúc, sơ đồ, luồng logic cho khớp với code thực tế.
+Quy trình gốc của khóa học là **Explore → Plan → Code → Commit**. Bắt đầu viết mã ngay thường dẫn đến nhiều vòng sửa sai; khảo sát và lập kế hoạch trước giúp giảm chi phí về sau. Ở đây bổ sung thêm chín bước: thu thập yêu cầu trước khi khảo sát; phản biện sau khi khảo sát để tìm chỗ sai, chỗ thiếu và chỗ chưa quyết định; vẽ diagram, viết chi tiết luồng hoạt động của từng tính năng và làm design để thống nhất hướng đi; đưa toàn bộ kết quả lên thẻ Kanban; kết nối Telegram để giao việc và nhận thông báo từ xa trước khi lập kế hoạch; phân tích và chia kế hoạch thành các task nhỏ trước khi code; và sau khi code xong thì cập nhật tài liệu cấu trúc, sơ đồ, luồng logic cho khớp với code thực tế.
 
 - Bài gốc: [Claude Code 101 — Explore, plan, code, commit](https://anthropic.skilljar.com/claude-code-101/469792)
 - Video: [The explore → plan → code → commit workflow](https://www.youtube.com/watch?v=xJQuF02NAK8)
@@ -196,7 +196,64 @@ sequenceDiagram
 
 Đọc lại sơ đồ và sửa ngay nếu sai. Sửa sơ đồ rẻ hơn rất nhiều so với sửa code.
 
-### 2.5 Design — Tạo và vẽ thiết kế
+### 2.5 Flow — Chi tiết luồng hoạt động của từng tính năng
+
+> **Sơ đồ cho thấy bức tranh tổng thể. Luồng chi tiết mô tả từng bước và từng nhánh của mỗi tính năng.**
+
+Sơ đồ ở bước 2.4 dễ đọc nhưng thường bỏ qua chi tiết: đầu vào cụ thể là gì, rẽ nhánh theo điều kiện nào, lỗi xảy ra ở bước nào và hệ thống phản hồi ra sao. Bước này viết từng luồng thành văn bản có cấu trúc, mỗi tính năng một tài liệu. Tài liệu này về sau dùng để viết test và đối chiếu khi review code.
+
+Với mỗi tính năng, cần mô tả:
+
+- **Điểm kích hoạt:** ai hoặc cái gì bắt đầu luồng (người dùng bấm nút, cron job, webhook...).
+- **Điều kiện trước:** quyền và trạng thái dữ liệu cần có.
+- **Đầu vào:** tham số, kiểu dữ liệu, giới hạn hợp lệ.
+- **Luồng chính:** các bước được đánh số, mỗi bước ghi rõ thành phần nào làm gì.
+- **Luồng rẽ nhánh:** đi theo hướng nào khi điều kiện khác đi (dữ liệu lớn, không có dữ liệu...).
+- **Luồng lỗi:** lỗi gì, xảy ra ở bước nào, người dùng nhận được phản hồi gì, có ghi log hoặc thử lại không.
+- **Kết quả:** dữ liệu nào thay đổi và người dùng nhận được gì.
+
+**Mẫu prompt:**
+
+```text
+Dựa trên yêu cầu, các quyết định đã chốt và sơ đồ docs/diagrams/export-report.md,
+viết chi tiết luồng hoạt động cho từng tính năng trong phạm vi.
+Mỗi tính năng ghi rõ: điểm kích hoạt, điều kiện trước, đầu vào,
+luồng chính (đánh số từng bước), luồng rẽ nhánh, luồng lỗi và kết quả.
+Chỗ nào chưa có quyết định thì liệt kê riêng để hỏi tôi, không tự giả định.
+Lưu vào docs/flows/export-report.md. Chưa sửa mã.
+```
+
+**Ví dụ kết quả:**
+
+```text
+Tính năng: Xuất báo cáo doanh thu ra Excel
+
+Kích hoạt: người dùng bấm "Xuất Excel" trên trang báo cáo doanh thu.
+Điều kiện trước: đã đăng nhập, có role Admin hoặc Kế toán.
+Đầu vào: kỳ báo cáo (từ ngày, đến ngày), dài tối đa 12 tháng.
+
+Luồng chính:
+1. Frontend gọi GET /reports/revenue/export?from=...&to=...
+2. API kiểm tra quyền và tính hợp lệ của kỳ báo cáo.
+3. API đếm số dòng. Nếu ≤ 50.000 dòng thì truy vấn và tạo file .xlsx.
+4. API trả file. Frontend tải file xuống và hiện thông báo thành công.
+
+Rẽ nhánh:
+3a. Trên 50.000 dòng: tạo job chạy nền, trả 202 kèm mã job.
+    Khi job xong, gửi link tải qua thông báo trong ứng dụng.
+3b. Kỳ không có dữ liệu: trả 204, frontend hiện "Không có dữ liệu trong kỳ này".
+
+Lỗi:
+E1. Không đủ quyền (bước 2): trả 403. Với role khác, frontend ẩn nút.
+E2. Kỳ không hợp lệ hoặc dài quá 12 tháng (bước 2): trả 400 kèm thông báo cụ thể.
+E3. Lỗi database (bước 3): trả 500 và ghi log. Frontend hiện "Xuất thất bại, hãy thử lại".
+
+Kết quả: người dùng nhận file revenue_<từ>_<đến>.xlsx. Dữ liệu trong hệ thống không thay đổi.
+```
+
+Mỗi nhánh rẽ và mỗi lỗi nên có ít nhất một test case tương ứng. Nếu trong lúc viết luồng phát hiện chỗ chưa có quyết định (ví dụ chưa biết kỳ báo cáo được dài tối đa bao lâu), quay lại bước 2.3 để chốt rồi mới viết tiếp.
+
+### 2.6 Design — Tạo và vẽ thiết kế
 
 Khi thay đổi có giao diện, cần có design trước khi lập kế hoạch code. Với tác vụ không có giao diện (API, script, refactor), thay bằng bản thiết kế kỹ thuật ngắn: interface, cấu trúc dữ liệu, format request/response.
 
@@ -224,7 +281,7 @@ Chưa sửa mã của ứng dụng.
 
 Chỉ chuyển sang bước tiếp theo sau khi bạn đã duyệt design.
 
-### 2.6 Kanban — Tạo và kết nối bảng công việc
+### 2.7 Kanban — Tạo và kết nối bảng công việc
 
 > **Mỗi yêu cầu đã duyệt là một thẻ trên bảng Kanban trước khi bắt đầu Plan.**
 
@@ -254,7 +311,7 @@ Mỗi thẻ nên trả lời được:
 - Mục tiêu: thêm, bỏ hoặc thay đổi cái gì.
 - Phạm vi: dự án hoặc phần nào của dự án.
 - Tiêu chí hoàn thành có thể kiểm tra.
-- Liên kết: tài liệu yêu cầu, các quyết định đã chốt ở bước phản biện, diagram, design, nhánh, PR hoặc issue liên quan.
+- Liên kết: tài liệu yêu cầu, các quyết định đã chốt ở bước phản biện, diagram, luồng hoạt động, design, nhánh, PR hoặc issue liên quan.
 
 Nếu tính năng lớn, tách thành nhiều thẻ nhỏ, mỗi thẻ có thể hoàn thành và review độc lập.
 
@@ -269,7 +326,7 @@ docs/diagrams/export-report.md và prototype design đã duyệt.
 
 Khi làm xong từng giai đoạn tiếp theo, cập nhật trạng thái thẻ tương ứng: tạo thẻ → `To do`, bắt đầu Plan → `In progress` và tạo nhánh theo quy ước, mở PR → `Review`, merge → `Done`.
 
-### 2.7 Telegram — Giao việc và nhận thông báo từ xa
+### 2.8 Telegram — Giao việc và nhận thông báo từ xa
 
 > **Không cần ngồi trước máy: giao việc, duyệt kế hoạch và xem tiến độ qua Telegram.**
 
@@ -300,7 +357,7 @@ Nhắn cho bot giống như gõ prompt trong terminal, vẫn theo nguyên tắc 
 
 ```text
 Đọc thẻ "Xuất báo cáo doanh thu ra Excel" trên Kanban.
-Chuyển thẻ sang In progress và lập kế hoạch theo mục 2.8.
+Chuyển thẻ sang In progress và lập kế hoạch theo mục 2.9.
 Gửi kế hoạch qua đây để tôi duyệt. Chưa sửa mã.
 ```
 
@@ -318,12 +375,12 @@ Gửi kế hoạch qua đây để tôi duyệt. Chưa sửa mã.
 - Chỉ cho phép tài khoản của bạn (allowlist) ra lệnh. Ai nhắn được cho bot là có thể điều khiển AI trên máy bạn.
 - Việc quan trọng như push, merge, xóa dữ liệu vẫn nên duyệt rõ ràng, không để AI tự làm chỉ vì có một tin nhắn yêu cầu.
 
-### 2.8 Plan — Lập kế hoạch
+### 2.9 Plan — Lập kế hoạch
 
 Một kế hoạch tốt cần nêu rõ:
 
 - Mong muốn: thêm tính năng gì, bỏ hoặc thay đổi cái gì.
-- Bám theo yêu cầu, các quyết định đã chốt, diagram và design đã gắn trên thẻ Kanban.
+- Bám theo yêu cầu, các quyết định đã chốt, diagram, luồng hoạt động và design đã gắn trên thẻ Kanban.
 - Lộ trình thực hiện, ví dụ: tạo interface trước → setup state → sử dụng ở đâu.
 - Các tệp dự kiến sửa.
 - Trình tự thực hiện.
@@ -333,7 +390,7 @@ Một kế hoạch tốt cần nêu rõ:
 
 Đây là thời điểm ít tốn kém nhất để điều chỉnh hướng đi. Nếu kế hoạch đụng đến quá nhiều tệp hoặc thêm dependency không cần thiết, hãy thu hẹp phạm vi trước khi triển khai.
 
-### 2.9 Breakdown — Phân tích và phân mảnh công việc
+### 2.10 Breakdown — Phân tích và phân mảnh công việc
 
 > **Chia kế hoạch lớn thành các task nhỏ. Mỗi task phải làm, kiểm tra và commit được độc lập.**
 
@@ -385,7 +442,7 @@ Trong lúc thực hiện:
 - Đánh dấu task xong trên checklist của thẻ Kanban.
 - Nếu một task phình to quá dự kiến, dừng lại và chia nhỏ tiếp thay vì cố làm cho xong.
 
-### 2.10 Code — Thực thi có kiểm chứng
+### 2.11 Code — Thực thi có kiểm chứng
 
 Sau khi duyệt kế hoạch và danh sách task, Claude triển khai lần lượt từng task. Để giai đoạn này ổn định:
 
@@ -395,7 +452,7 @@ Sau khi duyệt kế hoạch và danh sách task, Claude triển khai lần lư�
 
 Nếu một lỗi lặp lại do quy ước dự án, hãy ghi quy ước vào `CLAUDE.md` thay vì sửa thủ công trong mọi phiên.
 
-### 2.11 Docs — Cập nhật cấu trúc, sơ đồ, luồng logic của source code
+### 2.12 Docs — Cập nhật cấu trúc, sơ đồ, luồng logic của source code
 
 > **Code đã đổi thì tài liệu cũng phải đổi theo, trong cùng một commit hoặc PR.**
 
@@ -405,7 +462,7 @@ Cần rà soát và cập nhật:
 
 - **Cấu trúc source code:** thư mục, module, tệp mới thêm hoặc đã xóa, và vai trò của từng phần (ví dụ trong `README.md` hoặc `docs/ARCHITECTURE.md`).
 - **Sơ đồ:** cập nhật các diagram ở bước 2.4 (ví dụ `docs/diagrams/export-report.md`) theo đúng luồng đã code, bỏ phần "hiện tại" cũ nếu không còn đúng.
-- **Luồng logic:** mô tả ngắn luồng xử lý chính, điều kiện rẽ nhánh, cách xử lý lỗi và các trường hợp biên đã xử lý.
+- **Luồng logic:** cập nhật tài liệu luồng hoạt động ở bước 2.5 (ví dụ `docs/flows/export-report.md`) theo đúng code: luồng chính, điều kiện rẽ nhánh, cách xử lý lỗi và các trường hợp biên đã xử lý.
 - **Interface:** API, tham số, format dữ liệu vào và ra nếu có thay đổi.
 - **`CLAUDE.md`:** nếu có quy ước mới (lệnh build, test, cách đặt tên...), ghi lại để AI dùng ở các phiên sau.
 - **Thẻ Kanban:** gắn link tới tài liệu đã cập nhật.
@@ -424,7 +481,7 @@ Liệt kê những chỗ code khác với kế hoạch ban đầu. Không sửa 
 
 Danh sách "những chỗ khác với kế hoạch" rất đáng đọc: nó cho biết AI đã tự quyết định những gì trong lúc code, để bạn xác nhận hoặc yêu cầu sửa trước khi commit.
 
-### 2.12 Commit — Rà soát và đóng gói thay đổi
+### 2.13 Commit — Rà soát và đóng gói thay đổi
 
 Trước khi commit:
 
