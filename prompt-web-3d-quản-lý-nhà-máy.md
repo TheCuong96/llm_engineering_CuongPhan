@@ -1,4 +1,3 @@
-Toàn bộ phân tích của Claude để làm giống video này, mọi người copy về đổi tên thành .md rồi cho agent triển khai nhé. Có mấy bạn nhắn tin hỏi mình, mình không biết bị vào spam nên không trả lời kịp. Mình cũng chỉ tốn tí token để phân tích chứ không phải cái gì to tát của mình nên chẳng cần giấu, share anh em chơi, làm ra sản phẩm xịn thì còn nhiều thứ lắm.
 ---------------------------
 # WareTrack-style — Tài liệu triển khai giao diện vận hành 3D kiểu chiến thuật
 *Phân tích từ video demo của Dilum Sanjaya trên X (72 giây) · 13/10/2026 · Dùng làm đầu vào (brief) khi khởi động một dự án mới theo cùng phong cách*
