@@ -71,3 +71,18 @@ export function switchSite(siteId: string): void {
   useSim.setState({ viewSiteId: siteId });
   useSelection.getState().select(null);
 }
+
+/** Phone layout breakpoint (spec 13: a bottom sheet replaces the right-hand panels). */
+export const MOBILE_QUERY = '(max-width: 767px)';
+
+export function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setMatches(mq.matches);
+    on();
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, [query]);
+  return matches;
+}

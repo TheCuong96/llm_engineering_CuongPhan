@@ -1,7 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Crosshair, Maximize2, Minimize2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Chip, Eyebrow, Field, IconButton, Panel, ProgressBar, Tile } from '../design/primitives';
+import { Chip, EmptyState, Eyebrow, Field, IconButton, Panel, ProgressBar, Tile } from '../design/primitives';
 import { useSelection, type Sel } from '../store/selection';
 import { useSim } from '../store/sim';
 import { useSimTick } from './hooks';
@@ -15,7 +15,7 @@ const GONE = 'No longer on site';
  * If the selected entity disappears the last card stays, dimmed, with a "left …" line
  * instead of going blank (spec 7.2).
  */
-export function DetailPanel() {
+export function DetailPanel({ embedded = false }: { embedded?: boolean }) {
   const { world, viewSiteId } = useSimTick();
   const selected = useSelection((s) => s.selected);
   const select = useSelection((s) => s.select);
@@ -47,13 +47,13 @@ export function DetailPanel() {
     <Panel
       data-region="detail"
       aria-label={card ? `${card.eyebrow}: ${card.title}` : 'Details'}
-      className="absolute flex flex-col overflow-hidden transition-[width] duration-300"
-      style={{
-        top: 'var(--hud-top)',
-        right: 'var(--hud-gap)',
-        width: 'var(--hud-detail-w)',
-        bottom: 'calc(var(--hud-fleet-h) + var(--hud-gap) * 2)',
-      }}
+      embedded={embedded}
+      className={`flex flex-col overflow-hidden ${embedded ? 'h-full' : 'absolute transition-[width] duration-300'}`}
+      style={
+        embedded
+          ? undefined
+          : { top: 'var(--hud-top)', right: 'var(--hud-gap)', width: 'var(--hud-detail-w)', bottom: 'calc(var(--hud-fleet-h) + var(--hud-gap) * 2)' }
+      }
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
@@ -66,8 +66,12 @@ export function DetailPanel() {
           animate={{ opacity: gone ? 0.55 : 1, y: 0 }}
           exit={reduced ? undefined : { opacity: 0, y: -4 }}
           transition={{ duration: 0.22 }}
-          className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5"
+          className={`flex min-h-0 flex-1 flex-col overflow-y-auto ${embedded ? 'px-4 pt-1 pb-4' : 'p-5'}`}
         >
+          {!card && (
+            // A selection that never resolved (e.g. a stale id): say so instead of a blank panel.
+            <EmptyState className="flex-1" title="Nothing to show" hint={`${sel.id} isn't on any site. Press Esc to return to the site overview.`} />
+          )}
           {card && (
             <>
               <header className="flex items-start justify-between gap-3">
@@ -80,9 +84,11 @@ export function DetailPanel() {
                   <IconButton label="Locate on map" onClick={() => useSelection.getState().requestFly()} disabled={Boolean(gone)}>
                     <Crosshair className="size-4" />
                   </IconButton>
-                  <IconButton label={expanded ? 'Collapse panel' : 'Expand panel'} onClick={() => setExpanded((x) => !x)} pressed={expanded}>
-                    {expanded ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
-                  </IconButton>
+                  {!embedded && (
+                    <IconButton label={expanded ? 'Collapse panel' : 'Expand panel'} onClick={() => setExpanded((x) => !x)} pressed={expanded}>
+                      {expanded ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+                    </IconButton>
+                  )}
                   <IconButton label="Close" onClick={() => select(null)} disabled={!selected}>
                     <X className="size-4" />
                   </IconButton>

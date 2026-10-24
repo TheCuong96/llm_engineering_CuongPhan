@@ -1,7 +1,7 @@
 import * as Tabs from '@radix-ui/react-tabs';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { useState, type ReactNode } from 'react';
-import { Chip, Panel } from '../design/primitives';
+import { Chip, EmptyState, Panel } from '../design/primitives';
 import { secondsToNextMilestone, siteSummary } from '../sim/hudSelectors';
 import type { Truck } from '../sim/types';
 import type { World } from '../sim/world';
@@ -12,6 +12,11 @@ import { carrierName, dockLabel, forkliftChip, forkliftTask, truckChip, type Chi
 
 type Tab = 'docks' | 'forklifts' | 'trucks';
 const TAB_LABEL: Record<Tab, string> = { docks: 'Docks', forklifts: 'Forklifts', trucks: 'Trucks' };
+const TAB_EMPTY: Record<Tab, { title: string; hint: string }> = {
+  docks: { title: 'No truck bays', hint: 'This site has no docks configured.' },
+  forklifts: { title: 'No forklifts here', hint: 'This site has no forklift fleet assigned.' },
+  trucks: { title: 'The yard is clear', hint: 'Trucks show up here as they reach the gate. Switch site to see other yards.' },
+};
 
 interface Row {
   key: string;
@@ -90,7 +95,7 @@ function truckRows(world: World, siteId: string): Row[] {
 }
 
 /** F. Fleet board, bottom-right (spec 4.6): every row selects its entity and flies the camera there. */
-export function FleetBoard() {
+export function FleetBoard({ embedded = false }: { embedded?: boolean }) {
   const { world, viewSiteId } = useSimTick();
   const selected = useSelection((s) => s.selected);
   const reduced = useReducedMotion() ?? false;
@@ -107,8 +112,9 @@ export function FleetBoard() {
     <Panel
       data-region="fleet"
       aria-label="Fleet board"
-      className="absolute flex flex-col p-4"
-      style={{ right: 'var(--hud-gap)', bottom: 'var(--hud-gap)', width: 'var(--hud-fleet-w)', height: 'var(--hud-fleet-h)' }}
+      embedded={embedded}
+      className={`flex flex-col ${embedded ? 'h-full px-3 pb-3' : 'absolute p-4'}`}
+      style={embedded ? undefined : { right: 'var(--hud-gap)', bottom: 'var(--hud-gap)', width: 'var(--hud-fleet-w)', height: 'var(--hud-fleet-h)' }}
     >
       <Tabs.Root value={tab} onValueChange={(v) => setTab(v as Tab)} className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between gap-2">
@@ -123,7 +129,7 @@ export function FleetBoard() {
               </Tabs.Trigger>
             ))}
           </Tabs.List>
-          <span className="min-w-0 truncate text-[12px] text-ink-muted">{world.sites.find((s) => s.id === viewSiteId)?.name}</span>
+          {!embedded && <span className="min-w-0 truncate text-[12px] text-ink-muted">{world.sites.find((s) => s.id === viewSiteId)?.name}</span>}
         </div>
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
@@ -135,7 +141,7 @@ export function FleetBoard() {
             className="mt-2.5 min-h-0 flex-1 overflow-y-auto"
           >
             <Tabs.Content value={tab} forceMount data-tab={tab} className="space-y-1.5 outline-none">
-              {rows.length === 0 && <p className="py-4 text-center text-[13px] text-ink-muted">Nothing here right now.</p>}
+              {rows.length === 0 && <EmptyState {...TAB_EMPTY[tab]} />}
               {rows.map((r) => (
                 <BoardRow key={r.key} row={r} active={sameSel(selected, r.target) && r.target.kind !== 'site'} siteId={viewSiteId} />
               ))}

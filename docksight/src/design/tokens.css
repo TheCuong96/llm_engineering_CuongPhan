@@ -56,11 +56,27 @@
   --hud-track-h: clamp(136px, 16vh, 172px);
 }
 
+/* Phone layout (< 768 px): the top bar wraps to two rows; the sheet replaces the side panels. */
+@media (max-width: 767px) {
+  :root {
+    --hud-gap: 10px;
+    --hud-top: 126px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     --dur-panel: 0ms;
     --dur-count: 0ms;
     --dur-fly: 0ms;
+  }
+  /* Catch-all for CSS transitions (bar widths, panel width, pulses): state changes snap. */
+  *,
+  ::before,
+  ::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
 

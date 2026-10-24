@@ -9,7 +9,12 @@ export function KpiBar() {
   const { world, viewSiteId } = useSimTick();
   const k = siteKpis(world, viewSiteId);
   return (
-    <div data-region="kpi" className="absolute flex gap-3" style={{ top: 'var(--hud-top)', left: 'var(--hud-gap)' }}>
+    <div
+      data-region="kpi"
+      // Phones: the three cards scroll sideways instead of overflowing the screen.
+      className="absolute flex gap-3 max-md:right-0 max-md:gap-2 max-md:overflow-x-auto max-md:pr-[var(--hud-gap)] max-md:pb-2"
+      style={{ top: 'var(--hud-top)', left: 'var(--hud-gap)' }}
+    >
       <KpiCard
         id="stock"
         icon={Boxes}
@@ -62,7 +67,7 @@ function KpiCard(props: {
   const Icon = props.icon;
   const Trend = props.up ? TrendingUp : TrendingDown;
   return (
-    <Panel data-kpi={props.id} className="w-[clamp(180px,11.5vw,228px)] p-3.5">
+    <Panel data-kpi={props.id} className="w-[clamp(180px,11.5vw,228px)] shrink-0 p-3.5 max-md:w-[156px] max-md:p-2.5">
       <div className="flex items-center gap-2">
         <span className="grid size-7 place-items-center rounded-[9px] bg-tile text-accent">
           <Icon className="size-4" aria-hidden="true" />
@@ -70,7 +75,7 @@ function KpiCard(props: {
         <span className="text-[12px] font-medium text-ink-muted">{props.label}</span>
       </div>
       <div className="mt-2 flex items-baseline gap-2">
-        <span data-kpi-value className="text-[24px] leading-none font-bold tracking-tight tabular-nums">
+        <span data-kpi-value className="text-[24px] leading-none max-md:text-[20px] font-bold tracking-tight tabular-nums">
           {props.format(shown)}
         </span>
         <Chip tone={props.up ? 'success' : 'warning'} className="!px-1.5 !text-[11px]">

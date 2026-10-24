@@ -1,5 +1,5 @@
 import { Check, ChevronRight, ClipboardCheck, PackageCheck, Truck as TruckIcon, Warehouse, type LucideIcon } from 'lucide-react';
-import { Chip, Panel } from '../design/primitives';
+import { Chip, EmptyState, Panel } from '../design/primitives';
 import { secondsToNextMilestone, shipmentTimeline } from '../sim/hudSelectors';
 import type { ShipmentStepKey, Truck } from '../sim/types';
 import type { World } from '../sim/world';
@@ -33,7 +33,7 @@ export function trackedTruck(world: World, viewSiteId: string, selected: ReturnT
 }
 
 /** E. Shipment tracking, bottom-left: five-step stepper + shipment card (spec 4.5). */
-export function ShipmentTracking() {
+export function ShipmentTracking({ embedded = false }: { embedded?: boolean }) {
   const { world, viewSiteId } = useSimTick();
   const selected = useSelection((s) => s.selected);
   const truck = trackedTruck(world, viewSiteId, selected);
@@ -43,11 +43,17 @@ export function ShipmentTracking() {
     <Panel
       data-region="tracking"
       aria-label="Shipment tracking"
-      className="absolute flex gap-5 p-4"
-      style={{ left: 'var(--hud-gap)', bottom: 'var(--hud-gap)', width: 'var(--hud-track-w)', height: 'var(--hud-track-h)' }}
+      embedded={embedded}
+      // In the sheet the stepper and the shipment card stack instead of sitting side by side.
+      className={`flex ${embedded ? 'min-h-full flex-col gap-4 px-4 pb-4' : 'absolute gap-5 p-4'}`}
+      style={embedded ? undefined : { left: 'var(--hud-gap)', bottom: 'var(--hud-gap)', width: 'var(--hud-track-w)', height: 'var(--hud-track-h)' }}
     >
       {!truck || !shipment ? (
-        <p className="m-auto text-[13px] text-ink-muted">No trucks at {viewSiteId} right now.</p>
+        <EmptyState
+          className="m-auto"
+          title={`No shipments moving at ${viewSiteId}`}
+          hint="The next truck to reach the gate is tracked here. Pick any truck on the board or in search to follow it."
+        />
       ) : (
         <>
           <Stepper world={world} truck={truck} />
@@ -124,7 +130,7 @@ function ShipmentCard({ world, truck }: { world: World; truck: Truck }) {
       type="button"
       data-shipment-card={shipment.id}
       onClick={() => selectEntity({ kind: 'truck', id: truck.id }, truck.homeSiteId)}
-      className="flex min-w-0 flex-[2] items-center gap-3 rounded-tile bg-tile px-3.5 text-left hover:bg-chip-info-bg focus-visible:outline-2 focus-visible:outline-accent"
+      className="flex min-w-0 flex-[2] items-center gap-3 rounded-tile bg-tile px-3.5 py-3 text-left hover:bg-chip-info-bg focus-visible:outline-2 focus-visible:outline-accent"
     >
       <span className="grid size-11 shrink-0 place-items-center rounded-[12px] bg-white text-accent">
         <TruckIcon className="size-5" aria-hidden="true" />

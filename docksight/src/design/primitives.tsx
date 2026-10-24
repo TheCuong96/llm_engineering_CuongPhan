@@ -17,11 +17,11 @@ const barTone: Record<Tone, string> = {
   neutral: 'bg-neutral-bar',
 };
 
-/** Frosted-glass card that every HUD region sits in. */
-export function Panel({ className = '', children, ...rest }: ComponentPropsWithoutRef<'section'>) {
+/** Frosted-glass card that every HUD region sits in. `embedded` drops the frame (inside the mobile sheet). */
+export function Panel({ className = '', children, embedded = false, ...rest }: ComponentPropsWithoutRef<'section'> & { embedded?: boolean }) {
   return (
     <section
-      className={`rounded-card border border-white/70 bg-white/88 shadow-hud backdrop-blur-[16px] ${className}`}
+      className={`${embedded ? '' : 'rounded-card border border-white/70 bg-white/88 shadow-hud backdrop-blur-[16px]'} ${className}`}
       {...rest}
     >
       {children}
@@ -108,5 +108,16 @@ export function IconButton({
     >
       {children}
     </button>
+  );
+}
+
+/** Empty or error state (P7): says what is missing and what to do next, never a blank region. */
+export function EmptyState({ title, hint, children, className = '' }: { title: string; hint?: ReactNode; children?: ReactNode; className?: string }) {
+  return (
+    <div data-empty className={`flex flex-col items-center justify-center gap-1 px-4 py-4 text-center ${className}`}>
+      <p className="text-[13px] font-semibold">{title}</p>
+      {hint && <p className="max-w-[34ch] text-[12px] leading-snug text-ink-muted">{hint}</p>}
+      {children && <div className="mt-2">{children}</div>}
+    </div>
   );
 }

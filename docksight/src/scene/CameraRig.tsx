@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import CameraControlsImpl from 'camera-controls';
 import { useReducedMotion } from 'framer-motion';
 import { useEffect, useRef } from 'react';
-import { Box3, Vector3 } from 'three';
+import { Box3, PerspectiveCamera, Vector3 } from 'three';
 import type { Vec3 } from '../sim/geometry';
 import { motion as motionTokens } from '../design/colors';
 import { useCamera } from '../store/camera';
@@ -36,6 +36,11 @@ export const VIEW = {
   targetOffset: [0, 0, 4] as Vec3,
   /** Shift the projection centre into the HUD-free area (left of the detail panel, above the bottom bar). */
   viewOffset: { x: 0.12, y: 0.06 },
+  /** Phones: no side panel; the free area is between the KPI row and the bottom sheet. */
+  viewOffsetPortrait: { x: 0, y: 0.1 },
+  fovDefault: 30,
+  /** Portrait screens keep at least this horizontal FOV, so the compound still fits across. */
+  minHorizontalFov: 24,
   panHalfExtent: 70, // reaches the gate at x = −50 so trucks queuing there can be framed
   zoomStep: 22,
 };
@@ -108,8 +113,12 @@ export function CameraRig({ center }: { center: Vec3 }) {
 
   useEffect(() => {
     const { width: w, height: h } = size;
-    if (!('setViewOffset' in camera)) return;
-    camera.setViewOffset(w, h, w * VIEW.viewOffset.x, h * VIEW.viewOffset.y, w, h);
+    if (!(camera instanceof PerspectiveCamera)) return;
+    const aspect = w / h;
+    // Widen the vertical FOV on narrow screens instead of backing off into the fog.
+    camera.fov = Math.max(VIEW.fovDefault, (2 * Math.atan(Math.tan(deg(VIEW.minHorizontalFov / 2)) / aspect) * 180) / Math.PI);
+    const off = aspect < 1 ? VIEW.viewOffsetPortrait : VIEW.viewOffset;
+    camera.setViewOffset(w, h, w * off.x, h * off.y, w, h);
     return () => camera.clearViewOffset();
   }, [camera, size]);
 

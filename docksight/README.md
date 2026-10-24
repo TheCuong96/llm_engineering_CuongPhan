@@ -45,3 +45,44 @@ src/
 e2e/       playwright: bố cục, ảnh chụp
 evidence/  ảnh chụp theo giai đoạn
 ```
+
+## Phím tắt
+
+| Phím | Tác dụng |
+| --- | --- |
+| `/` | Mở ô tìm kiếm; ↑ ↓ chọn, Enter chọn đối tượng và bay camera tới |
+| `Esc` | Đóng tìm kiếm hoặc popover; nếu không có gì mở thì bỏ chọn |
+| `Space` | Tạm dừng hoặc chạy tiếp mô phỏng (trừ khi đang focus vào một nút hay ô nhập, khi đó Space bấm nút đó) |
+| `Tab` · `←` `→` | Đi qua mọi điều khiển; trong bảng điều phối, mũi tên đổi tab, Enter chọn dòng |
+
+## Chất lượng hình ảnh
+
+Có bốn mức, mỗi mức bỏ đi một thứ tốn nhất còn lại:
+
+| Mức | Tên | Bỏ đi |
+| --- | --- | --- |
+| 0 | `full` | không bỏ gì |
+| 1 | `no-ao` | AO |
+| 2 | `no-post` | bloom và tilt-shift |
+| 3 | `no-shadows` | bóng đổ; DPR giảm về 1 |
+
+- **Tự hạ chất lượng:** khi FPS dưới 45 suốt 3 giây liên tiếp, app hạ xuống mức tiếp theo và không tự nâng lại.
+- **Renderer phần mềm** (SwiftShader, llvmpipe) bắt đầu thẳng ở mức 2.
+
+Tham số URL:
+
+| Tham số | Tác dụng |
+| --- | --- |
+| `?quality=N` | Bắt đầu ở mức N |
+| `?autoQuality=off` | Tắt tự hạ chất lượng (dùng cho ảnh bằng chứng và test FPS) |
+| `?fps=30` | Giả lập FPS cho bộ điều tiết (dùng trong test) |
+| `?perf` | Hiện lớp phủ FPS và số draw call |
+| `?seed=N` | Đặt seed cho RNG của mô phỏng |
+
+## Di động
+
+Dưới 768 px:
+- Top bar xuống hai hàng.
+- KPI cuộn ngang.
+- Ẩn các nút camera; dùng kéo để di chuyển và chụm hai ngón để zoom.
+- Panel chi tiết, bảng điều phối và hành trình gom vào một bottom sheet có ba tab. Bấm thanh nắm để mở rộng hoặc thu gọn sheet.

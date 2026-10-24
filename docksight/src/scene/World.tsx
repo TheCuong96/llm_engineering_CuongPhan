@@ -1,7 +1,10 @@
 import { Canvas } from '@react-three/fiber';
 import { PlaneGeometry } from 'three';
+import { watchContext } from '../SceneBoundary';
+import { effects, useQuality } from '../store/quality';
 import { useSim, viewSite } from '../store/sim';
 import { CameraRig, FlyToSelection } from './CameraRig';
+import { Effects, QualityGovernor } from './Effects';
 import { Forklifts } from './Forklifts';
 import { HitAreas } from './HitAreas';
 import { Overlays } from './Overlays';
@@ -14,22 +17,23 @@ import { YardProps } from './YardProps';
 
 const mapGround = new PlaneGeometry(6000, 6000).rotateX(-Math.PI / 2);
 
-export const MAX_DPR = 1.5; // spec P2 budget
 
 /** Full-screen scene root (spec 5). Sits under every HUD panel. */
 export function World() {
   const site = useSim(viewSite);
   const sites = useSim((s) => s.world.sites);
   const c = site.worldPos;
+  const fx = effects(useQuality((s) => s.level));
 
   return (
     <Canvas
       data-scene="world"
       className="!absolute inset-0"
-      dpr={[1, MAX_DPR]}
+      dpr={[1, fx.maxDpr]} // spec P2 budget: ≤ 1.5, 1 at the lowest quality step
       flat
       shadows="soft"
       gl={{ antialias: true, powerPreference: 'high-performance' }}
+      onCreated={({ gl }) => watchContext(gl.domElement)}
       camera={{ fov: 30, near: 1, far: 1500, position: [c[0] + 90, 100, c[2] + 120] }}
     >
       <color attach="background" args={[sceneColor.sky]} />
@@ -39,7 +43,7 @@ export function World() {
       <directionalLight
         position={[c[0] + 60, 110, c[2] + 50]}
         intensity={1.5}
-        castShadow
+        castShadow={fx.shadows}
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0004}
         shadow-radius={4}
@@ -70,6 +74,8 @@ export function World() {
       <CameraRig center={c} />
       <FlyToSelection />
       <PerfProbe />
+      <QualityGovernor />
+      <Effects />
     </Canvas>
   );
 }

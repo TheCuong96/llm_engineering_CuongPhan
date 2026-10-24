@@ -11,7 +11,8 @@ test.use({
 });
 
 test('sustains ≥ 55 fps at 1920×1080, DPR 1.5', async ({ page }) => {
-  await page.goto('/?perf');
+  // Full quality with the governor off: the budget must hold with AO, bloom and tilt-shift on.
+  await page.goto('/?perf&autoQuality=off');
   await page.waitForFunction(() => (window.__perf?.frames ?? 0) > 120, null, { timeout: 30_000 });
   const samples: number[] = [];
   for (let i = 0; i < 8; i++) {
@@ -25,6 +26,7 @@ test('sustains ≥ 55 fps at 1920×1080, DPR 1.5', async ({ page }) => {
     samples.push(await page.evaluate(() => window.__perf!.fps));
   }
   const info = await page.evaluate(() => window.__perf!);
+  expect(await page.evaluate(() => window.__quality!().post)).toBe(true);
   const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
   const min = Math.min(...samples);
   console.log(JSON.stringify({ renderer: info.renderer, dpr: info.dpr, calls: info.calls, triangles: info.triangles, avg, min, samples }));

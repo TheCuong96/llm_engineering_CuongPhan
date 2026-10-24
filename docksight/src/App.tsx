@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { Hud } from './hud/Hud';
+import { ContextLostNotice, SceneBoundary } from './SceneBoundary';
 import { startSimLoop } from './store/simLoop';
 
 // three.js, R3F and drei load in their own chunk while the HUD shell paints first.
@@ -13,9 +14,12 @@ export function App() {
     <main className="relative h-full w-full overflow-hidden">
       {/* C. Scene layer, under every HUD region. The ground colour shows until the canvas paints. */}
       <div data-region="scene" className="absolute inset-0 bg-ground">
-        <Suspense fallback={null}>
-          <World />
-        </Suspense>
+        <SceneBoundary>
+          <Suspense fallback={null}>
+            <World />
+          </Suspense>
+        </SceneBoundary>
+        <ContextLostNotice />
       </div>
       <Hud />
       {showPerf && (

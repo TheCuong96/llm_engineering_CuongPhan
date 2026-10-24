@@ -2,6 +2,7 @@ import { Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSim } from '../store/sim';
 import { selectEntity } from './hooks';
+import { EmptyState } from '../design/primitives';
 import { GROUP_LABEL, searchWorld, type SearchHit } from './search';
 
 /** Global search (spec 4.7): "/" focuses, ↑↓ moves, Enter selects + flies there, Esc closes. */
@@ -53,7 +54,7 @@ export function SearchBox() {
 
   const showList = open && query.trim().length > 0;
   return (
-    <div data-slot="search" className="relative w-[min(420px,28vw)]">
+    <div data-slot="search" className="relative w-[min(420px,28vw)] max-md:order-last max-md:w-full">
       <label className="flex h-10 items-center gap-2 rounded-full bg-white px-4 text-ink-muted focus-within:outline-2 focus-within:outline-accent">
         <Search size={16} aria-hidden="true" />
         <input
@@ -83,7 +84,11 @@ export function SearchBox() {
           role="listbox"
           className="absolute top-12 right-0 left-0 z-20 max-h-[60vh] overflow-y-auto rounded-card border border-white/70 bg-white/95 p-2 shadow-hud backdrop-blur-[16px]"
         >
-          {hits.length === 0 && <li className="px-3 py-2 text-[13px] text-ink-muted">No matches</li>}
+          {hits.length === 0 && (
+            <li role="presentation">
+              <EmptyState title={`No matches for “${query.trim()}”`} hint="Try an ID such as TRK-2205, FL-01 or PAL-1026, a carrier, or a site name." />
+            </li>
+          )}
           {hits.map((h, i) => (
             <li key={`${h.kind}:${h.id}`} role="presentation">
               {(i === 0 || hits[i - 1]!.kind !== h.kind) && (

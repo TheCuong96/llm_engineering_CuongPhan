@@ -2,6 +2,12 @@ import { test } from '@playwright/test';
 
 // Evidence for each phase: PHASE=P0 npm run shots
 const phase = process.env.PHASE ?? 'dev';
+// Full quality: on software GL the governor would otherwise drop AO, bloom and shadows within seconds.
+const HOME = '/?autoQuality=off';
+// Full post-processing costs seconds per frame on SwiftShader, which also slows the rAF-driven sim.
+// Shots about HUD state or sim activity use the no-post level; the hero shots keep full quality.
+const FAST = '/?autoQuality=off&quality=2';
+test.setTimeout(120_000);
 const viewports = [
   { width: 1440, height: 900 },
   { width: 1920, height: 1080 },
@@ -10,7 +16,7 @@ const viewports = [
 for (const vp of viewports) {
   test(`screenshot ${vp.width}x${vp.height}`, async ({ page }) => {
     await page.setViewportSize(vp);
-    await page.goto('/');
+    await page.goto(HOME);
     await page.evaluate(() => document.fonts.ready);
     await page.waitForFunction(() => (window.__perf?.frames ?? 0) > 3, null, { timeout: 30_000 });
     await page.waitForTimeout(800); // camera smoothing settles
@@ -20,7 +26,7 @@ for (const vp of viewports) {
 
 test('screenshot close-up after zooming in', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
+  await page.goto(HOME);
   await page.waitForFunction(() => (window.__perf?.frames ?? 0) > 3, null, { timeout: 30_000 });
   for (let i = 0; i < 4; i++) await page.click('[data-map-action="zoom-in"]');
   await page.waitForTimeout(2500);
@@ -30,7 +36,7 @@ test('screenshot close-up after zooming in', async ({ page }) => {
 test('screenshot live activity at the docks', async ({ page }) => {
   test.setTimeout(150_000);
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
+  await page.goto(FAST);
   await page.waitForFunction(() => (window.__perf?.frames ?? 0) > 3, null, { timeout: 30_000 });
   await page.evaluate(() => window.__sim!().clock.setSpeed(60));
   await page.waitForFunction(
@@ -51,7 +57,7 @@ test('screenshot live activity at the docks', async ({ page }) => {
 test('screenshot detail variants, search and notifications', async ({ page }) => {
   test.setTimeout(150_000);
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
+  await page.goto(FAST);
   await page.waitForFunction(() => (window.__perf?.frames ?? 0) > 3, null, { timeout: 30_000 });
   await page.evaluate(() => window.__sim!().clock.setSpeed(60));
   await page.waitForFunction(
@@ -95,7 +101,7 @@ test('screenshot detail variants, search and notifications', async ({ page }) =>
 test('screenshot selection overlays (frame + chip, route, dock plate, departed card)', async ({ page }) => {
   test.setTimeout(240_000);
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
+  await page.goto(FAST);
   await page.waitForFunction(() => (window.__perf?.frames ?? 0) > 3, null, { timeout: 30_000 });
   const run = async (cond: string) => {
     await page.evaluate(() => {
@@ -144,7 +150,7 @@ test('screenshot selection overlays (frame + chip, route, dock plate, departed c
 test('screenshot every site, and the camera mid-flight between two', async ({ page }) => {
   test.setTimeout(180_000);
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
+  await page.goto(FAST);
   await page.waitForFunction(() => (window.__perf?.frames ?? 0) > 3, null, { timeout: 30_000 });
   // Let every site get some traffic first, then freeze so the shots are steady.
   await page.evaluate(() => window.__sim!().clock.setSpeed(60));
@@ -165,9 +171,60 @@ test('screenshot every site, and the camera mid-flight between two', async ({ pa
 
 test('screenshot rotated 90°', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/');
+  await page.goto(HOME);
   await page.waitForFunction(() => (window.__perf?.frames ?? 0) > 3, null, { timeout: 30_000 });
   await page.click('[data-map-action="rotate-right"]');
   await page.waitForTimeout(2500);
   await page.screenshot({ path: `evidence/${phase}/rotated-1440x900.png` });
+});
+
+test('screenshot P7 states: phone sheet, empty search, no WebGL, quality steps', async ({ page }) => {
+  test.setTimeout(180_000);
+  const ready = () => page.waitForFunction(() => (window.__perf?.frames ?? 0) > 3, null, { timeout: 30_000 });
+  const shot = (name: string) => page.screenshot({ path: `evidence/${phase}/${name}.png` });
+
+  // Each quality step, same frame, so the difference is visible side by side.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  for (const level of [0, 2, 3]) {
+    await page.goto(`/?autoQuality=off&quality=${level}`);
+    await ready();
+    await page.evaluate(() => (window.__sim!().clock.paused = true));
+    await page.waitForTimeout(1500);
+    await shot(`quality-${level}-1440x900`);
+  }
+
+  await page.goto(HOME);
+  await ready();
+  await page.keyboard.press('/');
+  await page.keyboard.type('zzzz');
+  await page.waitForTimeout(300);
+  await shot('empty-search-1440x900');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(HOME);
+  await ready();
+  await page.waitForTimeout(1500);
+  await shot('phone-sheet-390x844');
+  await page.getByRole('tab', { name: 'Fleet' }).click();
+  await page.waitForTimeout(400);
+  await shot('phone-fleet-390x844');
+  await page.locator('[data-tab="docks"] [data-row]').first().click();
+  await page.locator('[data-sheet-toggle]').click();
+  await page.waitForTimeout(600);
+  await shot('phone-expanded-390x844');
+});
+
+test('screenshot the no-WebGL fallback', async ({ page }) => {
+  await page.addInitScript(() => {
+    const real = HTMLCanvasElement.prototype.getContext;
+    // @ts-expect-error -- test shim
+    HTMLCanvasElement.prototype.getContext = function (type: string, ...rest: unknown[]) {
+      return /webgl/.test(type) ? null : real.call(this, type, ...(rest as []));
+    };
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(HOME);
+  await page.locator('[data-scene-error]').waitFor();
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: `evidence/${phase}/no-webgl-1440x900.png` });
 });

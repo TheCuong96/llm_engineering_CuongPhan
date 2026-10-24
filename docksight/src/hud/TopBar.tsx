@@ -1,7 +1,7 @@
 import * as Popover from '@radix-ui/react-popover';
 import { Bell, Box, ChevronDown, ChevronRight, Pause, Play } from 'lucide-react';
 import { useState } from 'react';
-import { Chip } from '../design/primitives';
+import { Chip, EmptyState } from '../design/primitives';
 import { SPEED_MAX, SPEED_MIN } from '../sim/clock';
 import { siteSummary } from '../sim/hudSelectors';
 import { fillPct } from '../sim/selectors';
@@ -23,24 +23,24 @@ export function TopBar() {
     // can only rise above the KPI cards if the bar itself does.
     <header
       data-region="topbar"
-      className="absolute top-3 right-3 left-3 z-20 flex h-16 items-center gap-4 rounded-card border border-white/70 bg-topbar/90 px-4 shadow-hud backdrop-blur-[16px]"
+      className="absolute top-3 right-3 left-3 z-20 flex h-16 items-center gap-4 rounded-card border border-white/70 bg-topbar/90 px-4 shadow-hud backdrop-blur-[16px] max-md:top-2 max-md:right-2 max-md:left-2 max-md:h-auto max-md:flex-wrap max-md:gap-x-2 max-md:gap-y-2 max-md:px-2.5 max-md:py-2"
     >
       <div className="flex items-center gap-2.5">
         <span className="grid size-9 place-items-center rounded-[10px] bg-accent text-white">
           <Box size={20} strokeWidth={2.2} aria-hidden="true" />
         </span>
-        <span className="text-[19px] font-bold tracking-tight">DockSight</span>
+        <span className="text-[19px] font-bold tracking-tight max-md:sr-only">DockSight</span>
       </div>
 
       <SearchBox />
       <SiteSwitcher world={world} viewSiteId={viewSiteId} />
 
-      <div className="flex-1" />
+      <div className="flex-1 max-md:hidden" />
 
       <LiveClock world={world} />
       <Notifications world={world} />
-      <div className="h-8 w-px bg-line" aria-hidden="true" />
-      <div data-slot="avatar" className="flex items-center gap-2.5">
+      <div className="h-8 w-px bg-line max-md:hidden" aria-hidden="true" />
+      <div data-slot="avatar" className="flex items-center gap-2.5 max-md:hidden">
         <span className="grid size-9 place-items-center rounded-full bg-lavender text-[13px] font-bold text-ink">DW</span>
         <span className="leading-tight">
           <span className="block text-[13px] font-semibold">Dana Whitfield</span>
@@ -66,14 +66,14 @@ function SiteSwitcher({ world, viewSiteId }: { world: World; viewSiteId: string 
     switchSite(world.sites[(i + 1) % world.sites.length]!.id);
   };
   return (
-    <div data-slot="site-switcher" className="flex h-11 items-center gap-1 rounded-full bg-white pr-1 pl-1.5">
+    <div data-slot="site-switcher" className="flex h-11 min-w-0 items-center gap-1 rounded-full bg-white pr-1 pl-1.5 max-md:flex-1">
       <Popover.Root open={open} onOpenChange={setOpen}>
         <Popover.Trigger
           aria-label={`Site ${site.id} ${site.name}, choose site`}
           className="flex min-w-0 items-center gap-2.5 rounded-full py-1 pr-2 pl-0.5 focus-visible:outline-2 focus-visible:outline-accent"
         >
-          <span className="rounded-full bg-accent px-2 py-1 text-[11.5px] font-bold text-white tabular-nums">{site.id}</span>
-          <span className="min-w-0 text-left leading-tight">
+          <span className="shrink-0 rounded-full bg-accent px-2 py-1 text-[11.5px] font-bold whitespace-nowrap text-white tabular-nums">{site.id}</span>
+          <span className="min-w-0 text-left leading-tight max-md:hidden">
             <span className="block truncate text-[13px] font-semibold">{site.name}</span>
             <span data-site-line className="block truncate text-[11.5px] text-ink-muted tabular-nums">
               {siteLine(world, site.id)}
@@ -194,7 +194,7 @@ function Notifications({ world }: { world: World }) {
       <Popover.Portal>
         <Popover.Content align="end" sideOffset={8} className={`${popoverCls} max-h-[60vh] w-80 overflow-y-auto`}>
           <div className="px-2 pt-1 pb-2 text-eyebrow font-semibold tracking-[0.08em] text-accent uppercase">Notifications</div>
-          {notices.length === 0 && <p className="px-2 pb-2 text-[13px] text-ink-muted">All clear.</p>}
+          {notices.length === 0 && <EmptyState title="All clear" hint="Delays, low stock and charger queues show up here." />}
           <ul>
             {notices.map((n) => (
               <li key={n.seq}>
