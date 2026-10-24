@@ -1,7 +1,9 @@
 import { Canvas } from '@react-three/fiber';
 import { useSim, viewSite } from '../store/sim';
-import { CameraRig } from './CameraRig';
+import { CameraRig, FlyToSelection } from './CameraRig';
 import { Forklifts } from './Forklifts';
+import { HitAreas } from './HitAreas';
+import { Overlays } from './Overlays';
 import { sceneColor } from './palette';
 import { Pallets } from './Pallets';
 import { PerfProbe } from './PerfProbe';
@@ -52,7 +54,10 @@ export function World() {
       <Trucks siteId={site.id} />
       <Forklifts siteId={site.id} />
       <Pallets siteId={site.id} />
+      <HitAreas site={site} />
+      <Overlays />
       <CameraRig center={c} />
+      <FlyToSelection />
       <PerfProbe />
     </Canvas>
   );

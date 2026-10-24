@@ -4,6 +4,7 @@ import { BoxGeometry, Color, ConeGeometry, InstancedMesh, MeshLambertMaterial, O
 import { color } from '../design/colors';
 import { useSim } from '../store/sim';
 import { hasPin, palletPlacement } from './entityPose';
+import { pickHandlers } from './picking';
 import { renderPoses } from './renderPoses';
 
 export const PALLET_CAPACITY = 64;
@@ -43,6 +44,16 @@ export function Pallets({ siteId }: { siteId: string }) {
     if (!c) colors.set(category, (c = new Color(LOAD_COLOR[category] ?? DEFAULT_LOAD)));
     return c;
   };
+
+  // Instanced meshes: the hit's instanceId indexes this frame's id list.
+  const pickPallet = useMemo(
+    () => pickHandlers((e) => (e.instanceId === undefined ? null : { kind: 'pallet', id: renderPoses.palletIds[e.instanceId]! })),
+    [],
+  );
+  const pickPin = useMemo(
+    () => pickHandlers((e) => (e.instanceId === undefined ? null : { kind: 'pallet', id: renderPoses.pinIds[e.instanceId]! })),
+    [],
+  );
 
   // instanceColor must exist before the shader compiles, or per-instance colour is ignored.
   useLayoutEffect(() => {
@@ -95,10 +106,10 @@ export function Pallets({ siteId }: { siteId: string }) {
 
   return (
     <group name="pallets">
-      <instancedMesh name="pallet-bases" ref={bases} args={[baseGeo, baseMat, PALLET_CAPACITY]} frustumCulled={false} castShadow />
-      <instancedMesh name="pallet-loads" ref={loads} args={[loadGeo, loadMat, PALLET_CAPACITY]} frustumCulled={false} castShadow />
-      <instancedMesh name="pin-heads" ref={heads} args={[pinHeadGeo, pinMat, PIN_CAPACITY]} frustumCulled={false} />
-      <instancedMesh name="pin-tips" ref={tips} args={[pinTipGeo, pinMat, PIN_CAPACITY]} frustumCulled={false} />
+      <instancedMesh name="pallet-bases" ref={bases} args={[baseGeo, baseMat, PALLET_CAPACITY]} frustumCulled={false} castShadow {...pickPallet} />
+      <instancedMesh name="pallet-loads" ref={loads} args={[loadGeo, loadMat, PALLET_CAPACITY]} frustumCulled={false} castShadow {...pickPallet} />
+      <instancedMesh name="pin-heads" ref={heads} args={[pinHeadGeo, pinMat, PIN_CAPACITY]} frustumCulled={false} {...pickPin} />
+      <instancedMesh name="pin-tips" ref={tips} args={[pinTipGeo, pinMat, PIN_CAPACITY]} frustumCulled={false} {...pickPin} />
     </group>
   );
 }

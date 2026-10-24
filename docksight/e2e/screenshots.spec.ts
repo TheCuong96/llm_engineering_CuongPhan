@@ -92,6 +92,55 @@ test('screenshot detail variants, search and notifications', async ({ page }) =>
   await shot('notifications');
 });
 
+test('screenshot selection overlays (frame + chip, route, dock plate, departed card)', async ({ page }) => {
+  test.setTimeout(240_000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await page.waitForFunction(() => (window.__perf?.frames ?? 0) > 3, null, { timeout: 30_000 });
+  const run = async (cond: string) => {
+    await page.evaluate(() => {
+      window.__sim!().clock.paused = false;
+      window.__sim!().clock.setSpeed(60);
+    });
+    await page.waitForFunction(cond, null, { timeout: 120_000 });
+    await page.evaluate(() => (window.__sim!().clock.paused = true));
+  };
+
+  // Incoming truck: route to the gate, dashed leg to the pin in its bay.
+  await run(`[...window.__sim().world.trucks.values()].some((t) => t.siteId === 'WH-01' && t.state === 'en_route' && t.dockId === undefined) || [...window.__sim().world.trucks.values()].some((t) => t.siteId === 'WH-01' && t.state === 'at_gate' && t.dockId)`);
+  const incoming = await page.evaluate(() => [...window.__sim!().world.trucks.values()].find((t) => t.siteId === 'WH-01' && (t.state === 'en_route' || t.state === 'at_gate'))!.id);
+  await page.evaluate((id) => window.__selection!().select({ kind: 'truck', id }), incoming);
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: `evidence/${phase}/route-1440x900.png` });
+
+  // Forklift at work: corner frame + floating chip.
+  await page.keyboard.press('Escape');
+  await run(`[...window.__sim().world.forklifts.values()].some((f) => f.carrying)`);
+  const fl = await page.evaluate(() => [...window.__sim!().world.forklifts.values()].find((f) => f.carrying)!.id);
+  await page.evaluate((id) => window.__selection!().select({ kind: 'forklift', id }), fl);
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: `evidence/${phase}/selected-forklift-1440x900.png` });
+
+  // Hover an empty dock: blue plate and "Bay n · Available".
+  await page.keyboard.press('Escape');
+  const dock = await page.evaluate(() => {
+    const d = window.__sim!().world.sites[0]!.docks.find((x) => x.state === 'available') ?? window.__sim!().world.sites[0]!.docks[0]!;
+    return window.__project!([d.pos[0], 0.3, d.pos[2]]);
+  });
+  await page.mouse.move(dock.x, dock.y);
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: `evidence/${phase}/dock-hover-1440x900.png` });
+
+  // An outbound truck drives off: the card dims with "Left WH-01 · heading to …".
+  await page.mouse.move(5, 450);
+  await run(`[...window.__sim().world.trucks.values()].some((t) => t.siteId === 'WH-01' && t.direction === 'outbound' && t.state === 'departing')`);
+  const leaving = await page.evaluate(() => [...window.__sim!().world.trucks.values()].find((t) => t.siteId === 'WH-01' && t.direction === 'outbound' && t.state === 'departing')!.id);
+  await page.evaluate((id) => window.__selection!().select({ kind: 'truck', id }), leaving);
+  await run(`window.__sim().world.trucks.get('${leaving}')?.state === 'in_transit'`);
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: `evidence/${phase}/departed-1440x900.png` });
+});
+
 test('screenshot rotated 90°', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');

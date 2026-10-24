@@ -7,6 +7,8 @@ export interface CameraApi {
   rotateLeft(): void;
   rotateRight(): void;
   reset(): void;
+  /** Glide the target to a point, closing in to at most `distance`. */
+  focus(pos: [number, number, number], distance: number): void;
 }
 
 interface CameraState {

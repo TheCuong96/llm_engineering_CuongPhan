@@ -1,10 +1,11 @@
 import { useFrame } from '@react-three/fiber';
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { BoxGeometry, CylinderGeometry, Group, MeshLambertMaterial } from 'three';
 import { TICK_DT } from '../sim/clock';
 import type { Forklift } from '../sim/types';
 import { useSim } from '../store/sim';
 import { forkliftPose, FORKS } from './entityPose';
+import { pickHandlers } from './picking';
 import { renderPoses } from './renderPoses';
 
 // Drawn ~1.3× life size so it reads at the default camera distance; FORKS in entityPose
@@ -41,8 +42,9 @@ function ForkliftModel({ fl, index }: { fl: Forklift; index: number }) {
     renderPoses.forklifts.set(fl.id, { pos: pose.pos, heading: heading.current });
   });
 
+  const pick = useMemo(() => pickHandlers(() => ({ kind: 'forklift', id: fl.id })), [fl.id]);
   return (
-    <group ref={ref} name={`forklift:${fl.id}`}>
+    <group ref={ref} name={`forklift:${fl.id}`} {...pick}>
       <mesh geometry={geo.body} material={paint} position={[0, 0.75, -0.1]} castShadow />
       <mesh geometry={geo.counterweight} material={paint} position={[0, 0.65, -1.3]} castShadow />
       <mesh geometry={geo.seat} material={black} position={[0, 1.37, -0.35]} />

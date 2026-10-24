@@ -6,6 +6,9 @@ import { useEffect, useRef } from 'react';
 import { Box3, Vector3 } from 'three';
 import type { Vec3 } from '../sim/geometry';
 import { useCamera } from '../store/camera';
+import { useSelection } from '../store/selection';
+import { useSim } from '../store/sim';
+import { entityPos, FRAME } from './entityPos';
 
 const { ACTION } = CameraControlsImpl;
 
@@ -44,6 +47,37 @@ function homePosition(target: Vec3, azimuth: number, polar: number, distance: nu
   ];
 }
 
+/**
+ * Flies the camera to the selection whenever someone asks (search Enter, a board row, a
+ * notification, the locate button). Retries for a couple of seconds while the entity has not
+ * been drawn yet, e.g. right after a site switch.
+ */
+export function FlyToSelection() {
+  const pending = useRef({ request: useSelection.getState().flyRequest, tries: 0 });
+  useFrame(() => {
+    const p = pending.current;
+    const { flyRequest, selected } = useSelection.getState();
+    if (flyRequest !== p.request) {
+      p.request = flyRequest;
+      p.tries = 120;
+    }
+    if (p.tries <= 0) return;
+    const api = useCamera.getState().api;
+    if (!api) return;
+    if (!selected || selected.kind === 'site') {
+      if (selected?.kind === 'site') api.reset();
+      p.tries = 0;
+      return;
+    }
+    const pos = entityPos(useSim.getState().world, selected);
+    p.tries--;
+    if (!pos) return;
+    api.focus(pos, FRAME[selected.kind].flyDistance);
+    p.tries = 0;
+  });
+  return null;
+}
+
 /** Drag = pan, wheel = zoom, rotation only through the HUD buttons in 90° steps. */
 export function CameraRig({ center }: { center: Vec3 }) {
   const ref = useRef<CameraControlsImpl>(null);
@@ -75,6 +109,10 @@ export function CameraRig({ center }: { center: Vec3 }) {
       rotateLeft: () => void c.rotate(deg(-90), 0, animate),
       rotateRight: () => void c.rotate(deg(90), 0, animate),
       reset: () => void c.reset(animate),
+      focus: (pos, distance) => {
+        void c.moveTo(pos[0], pos[1], pos[2], animate);
+        if (c.distance > distance) void c.dollyTo(distance, animate);
+      },
     });
     return () => register(null);
   }, [center, reduced, register]);

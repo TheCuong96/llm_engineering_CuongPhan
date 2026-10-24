@@ -6,6 +6,7 @@ import { TRUCK_LENGTH } from '../sim/layout';
 import type { Carrier, Truck } from '../sim/types';
 import { useSim } from '../store/sim';
 import { truckPose } from './entityPose';
+import { pickHandlers } from './picking';
 import { renderPoses } from './renderPoses';
 
 // Shared by every truck: trucks come and go all the time, and per-mount geometry would churn
@@ -53,8 +54,9 @@ function TruckModel({ truck, livery }: { truck: Truck; livery: Livery }) {
     renderPoses.trucks.set(truck.id, { pos: pose.pos, heading: heading.current });
   });
 
+  const pick = useMemo(() => pickHandlers(() => ({ kind: 'truck', id: truck.id })), [truck.id]);
   return (
-    <group ref={ref} name={`truck:${truck.id}`}>
+    <group ref={ref} name={`truck:${truck.id}`} {...pick}>
       <mesh geometry={geo.trailer} material={livery.trailer} position={[0, TRAILER.floor + TRAILER.h / 2, trailerZ]} castShadow />
       {/* One box a hair wider than the trailer shows the livery stripe on both sides. */}
       <mesh geometry={geo.stripe} material={livery.stripe} position={[0, TRAILER.floor + 1.1, trailerZ]} />

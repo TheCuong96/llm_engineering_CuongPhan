@@ -23,7 +23,7 @@ const AT_DOCK: Truck['state'][] = ['loading', 'unloading', 'docking'];
  * a selected forklift works for, else the busiest truck at the viewed site.
  */
 export function trackedTruck(world: World, viewSiteId: string, selected: ReturnType<typeof useSelection.getState>['selected']): Truck | null {
-  if (selected?.kind === 'truck') return world.trucks.get(selected.id) ?? null;
+  if (selected?.kind === 'truck' && world.trucks.has(selected.id)) return world.trucks.get(selected.id)!;
   if (selected?.kind === 'forklift') {
     const id = world.forklifts.get(selected.id)?.task?.truckId;
     if (id && world.trucks.has(id)) return world.trucks.get(id)!;
