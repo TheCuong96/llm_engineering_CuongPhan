@@ -1,5 +1,5 @@
 import * as Tabs from '@radix-ui/react-tabs';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useState, type ReactNode } from 'react';
 import { Chip, EmptyState, Panel } from '../design/primitives';
 import { secondsToNextMilestone, siteSummary } from '../sim/hudSelectors';
@@ -131,23 +131,22 @@ export function FleetBoard({ embedded = false }: { embedded?: boolean }) {
           </Tabs.List>
           {!embedded && <span className="min-w-0 truncate text-[12px] text-ink-muted">{world.sites.find((s) => s.id === viewSiteId)?.name}</span>}
         </div>
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={tab}
-            initial={reduced ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={reduced ? undefined : { opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            className="mt-2.5 min-h-0 flex-1 overflow-y-auto"
-          >
-            <Tabs.Content value={tab} forceMount data-tab={tab} className="space-y-1.5 outline-none">
-              {rows.length === 0 && <EmptyState {...TAB_EMPTY[tab]} />}
-              {rows.map((r) => (
-                <BoardRow key={r.key} row={r} active={sameSel(selected, r.target) && r.target.kind !== 'site'} siteId={viewSiteId} />
-              ))}
-            </Tabs.Content>
-          </motion.div>
-        </AnimatePresence>
+        {/* Fade in only, no exit: an exiting panel would keep focusable rows for 180 ms, and a Tab
+            pressed then lands on a row about to be removed, dropping focus back to <body>. */}
+        <motion.div
+          key={tab}
+          initial={reduced ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.18 }}
+          className="mt-2.5 min-h-0 flex-1 overflow-y-auto"
+        >
+          <Tabs.Content value={tab} forceMount data-tab={tab} className="space-y-1.5 outline-none">
+            {rows.length === 0 && <EmptyState {...TAB_EMPTY[tab]} />}
+            {rows.map((r) => (
+              <BoardRow key={r.key} row={r} active={sameSel(selected, r.target) && r.target.kind !== 'site'} siteId={viewSiteId} />
+            ))}
+          </Tabs.Content>
+        </motion.div>
       </Tabs.Root>
     </Panel>
   );

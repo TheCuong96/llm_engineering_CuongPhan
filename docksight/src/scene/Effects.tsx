@@ -1,6 +1,7 @@
 import { useFrame, useThree } from '@react-three/fiber';
 import { Bloom, EffectComposer, N8AO, TiltShift2 } from '@react-three/postprocessing';
 import { useEffect, useRef } from 'react';
+import { useCamera } from '../store/camera';
 import { effects, governorStep, SOFTWARE_RENDERER, SOFTWARE_START_LEVEL, useQuality } from '../store/quality';
 
 declare global {
@@ -51,6 +52,12 @@ export function QualityGovernor() {
     const q = useQuality.getState();
     const perf = window.__perf;
     if (!q.auto || !perf || perf === s.current.sample) return;
+    // A site flight is a transient load, and a step mid-flight recompiles every shader right
+    // while the user watches the transition. Ignore those samples; step after landing if needed.
+    if (useCamera.getState().flying) {
+      s.current.sample = perf;
+      return;
+    }
     const next = governorStep(q.level, s.current.lowSeconds, q.fakeFps ?? perf.fps);
     s.current = { lowSeconds: next.lowSeconds, sample: perf };
     if (next.level !== q.level) q.setLevel(next.level);
