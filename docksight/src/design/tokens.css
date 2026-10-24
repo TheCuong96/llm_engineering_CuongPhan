@@ -1,0 +1,82 @@
+@import 'tailwindcss';
+
+/* Design tokens, spec section 8. (m) = pixel-sampled from the reference video. */
+@theme {
+  --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
+
+  --color-ground: #f9fafd; /* (m) floor, light road */
+  --color-lavender: #d2d8eb; /* (m) shadows, darker ground */
+  --color-brand-roof: #144fcb; /* (m) warehouse roof */
+  --color-accent: #3b79f4; /* (m) the single UI accent, blue progress bars */
+  --color-success-bar: #22b249; /* (m) */
+  --color-warning-bar: #e8830c;
+  --color-neutral-bar: #94a3b8;
+
+  --color-chip-success-bg: #ddf6e2; /* (m) */
+  --color-chip-warning-bg: #ffe3af; /* (m) */
+  --color-chip-info-bg: #dde8fd;
+  --color-chip-neutral-bg: #eef1f6;
+  /* Chip text uses darker tones than the bars so 12px labels reach WCAG AA (spec 4.6). */
+  --color-chip-success-text: #166534;
+  --color-chip-warning-text: #9a5200;
+  --color-chip-info-text: #1d4ed8;
+  --color-chip-neutral-text: #475569;
+
+  --color-tile: #ecf4fd; /* (m) number tiles inside panels */
+  --color-topbar: #f2f5fc; /* (m) */
+  --color-ink: #0f1b3d; /* navy, near black */
+  --color-ink-muted: #5b6785; /* blue-grey secondary text */
+  --color-line: #e3e8f4;
+
+  --radius-card: 18px;
+  --radius-tile: 12px;
+
+  --text-eyebrow: 11px;
+  --text-chip: 12px;
+  --text-body: 13.5px;
+  --text-title: 19px;
+
+  --shadow-hud: 0 10px 32px -8px rgb(59 121 244 / 0.18), 0 2px 6px rgb(15 27 61 / 0.04);
+
+  --ease-hud: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:root {
+  /* Motion durations (spec 8); reduced-motion zeroes them in one place. */
+  --dur-panel: 250ms;
+  --dur-count: 750ms;
+  --dur-fly: 1250ms;
+  /* HUD geometry, proportional to the viewport (spec 3). */
+  --hud-gap: 16px;
+  --hud-top: 88px;
+  --hud-detail-w: 23vw;
+  --hud-fleet-w: 30vw;
+  --hud-fleet-h: clamp(210px, 25vh, 270px);
+  --hud-track-w: 60vw;
+  --hud-track-h: clamp(136px, 16vh, 172px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-panel: 0ms;
+    --dur-count: 0ms;
+    --dur-fly: 0ms;
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  color: var(--color-ink);
+  background: var(--color-ground);
+  font-feature-settings: 'tnum' 1, 'cv11' 1;
+  -webkit-font-smoothing: antialiased;
+}
