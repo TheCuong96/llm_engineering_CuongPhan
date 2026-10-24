@@ -35,6 +35,7 @@ export interface World {
   catalog: Map<string, SkuDef>;
   customers: readonly { name: string; city: string; distanceKm: number }[];
   drivers: readonly string[];
+  siteDistancesKm: Record<string, number>;
   counters: { truck: number; pallet: number; shipment: number; lot: number };
 }
 
@@ -46,6 +47,19 @@ export function emit(
   payload?: Record<string, unknown>,
 ): void {
   world.log.push({ t: world.t, type, siteId, entityId, payload });
+}
+
+export function siteDistanceKm(world: World, a: string, b: string): number {
+  const key = [a, b].sort().join('|');
+  const km = world.siteDistancesKm[key];
+  if (km === undefined) throw new Error(`no road distance ${key}`);
+  return km;
+}
+
+/** SKUs a transfer from `from` to `to` may carry: only what the destination keeps a line for. */
+export function sharedSkus(from: Site, to: Site): string[] {
+  const dest = new Set(to.inventory.map((i) => i.sku));
+  return from.inventory.map((i) => i.sku).filter((s) => dest.has(s));
 }
 
 export function getSite(world: World, id: string): Site {

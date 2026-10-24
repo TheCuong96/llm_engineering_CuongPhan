@@ -2,6 +2,7 @@ export type SimEventType =
   | 'truck_spawned'
   | 'truck_state'
   | 'truck_removed'
+  | 'truck_rehomed'
   | 'truck_late'
   | 'forklift_state'
   | 'battery_low'

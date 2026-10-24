@@ -46,4 +46,6 @@ export interface WorldConfig {
   catalog: SkuDef[];
   customers: readonly { name: string; city: string; distanceKm: number }[];
   drivers: readonly string[];
+  /** Road distances between sites in km, keyed "WH-01|WH-02" (ids sorted). */
+  siteDistancesKm: Record<string, number>;
 }

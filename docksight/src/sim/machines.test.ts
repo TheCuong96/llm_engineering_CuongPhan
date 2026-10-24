@@ -62,6 +62,42 @@ describe('truck', () => {
   });
 });
 
+describe('transfer between sites (spec 7.4)', () => {
+  it('leaves A as an outbound truck, drives off-map, and reappears at B en route as an inbound truck', () => {
+    const w = quietWorld(['WH-01', 'WH-02']);
+    const a = getSite(w, 'WH-01');
+    const truck = spawnTruck(w, a, 'outbound', 3, 'WH-02');
+    const first = truck.shipmentId;
+    expect(w.shipments.get(first)).toMatchObject({ destSiteId: 'WH-02', destination: 'WH-02 · Northgate DC' });
+
+    let offMap = false;
+    runUntil(w, () => {
+      if (truck.state === 'in_transit') offMap ||= truck.siteId === null;
+      return truck.homeSiteId === 'WH-02';
+    });
+    expect(offMap).toBe(true);
+    expect(truck).toMatchObject({ siteId: 'WH-02', state: 'en_route', direction: 'inbound', destSiteId: undefined });
+    expect(truck.shipmentId).not.toBe(first);
+    expect(w.log.events.find((e) => e.type === 'truck_rehomed')).toMatchObject({ siteId: 'WH-02', entityId: truck.id, payload: { from: 'WH-01' } });
+
+    // Highway time follows the distance table: 6 km at 60 km/h = 6 sim minutes.
+    const at = (to: string) => w.log.events.find((e) => e.type === 'truck_state' && e.entityId === truck.id && e.payload?.to === to)!.t;
+    expect(at('en_route') - at('in_transit')).toBeCloseTo(6 * 60, 0);
+
+    // It carries only goods WH-02 stocks, and they end up in WH-02's stock.
+    const carried = [...w.pallets.values()].filter((p) => p.location.ref === truck.id);
+    expect(carried).toHaveLength(3);
+    const stocked = new Set(getSite(w, 'WH-02').inventory.map((i) => i.sku));
+    for (const p of carried) {
+      expect(p.siteId).toBe('WH-02');
+      expect(stocked.has(p.sku)).toBe(true);
+    }
+    const before = getSite(w, 'WH-02').today.putAways;
+    runUntil(w, () => !w.trucks.has(truck.id));
+    expect(getSite(w, 'WH-02').today.putAways).toBe(before + 3);
+  });
+});
+
 describe('dock', () => {
   it('available → reserved → occupied → available', () => {
     const w = quietWorld();

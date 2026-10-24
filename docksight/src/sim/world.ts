@@ -29,6 +29,7 @@ export function createWorld(config: WorldConfig): World {
     catalog: new Map(config.catalog.map((d) => [d.sku, d])),
     customers: config.customers,
     drivers: config.drivers,
+    siteDistancesKm: config.siteDistancesKm,
     counters: { truck: 2040, pallet: 1023, shipment: 78400, lot: 310 },
   };
 

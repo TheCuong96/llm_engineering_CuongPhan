@@ -5,6 +5,7 @@ import { useReducedMotion } from 'framer-motion';
 import { useEffect, useRef } from 'react';
 import { Box3, Vector3 } from 'three';
 import type { Vec3 } from '../sim/geometry';
+import { motion as motionTokens } from '../design/colors';
 import { useCamera } from '../store/camera';
 import { useSelection } from '../store/selection';
 import { useSim } from '../store/sim';
@@ -14,7 +15,7 @@ const { ACTION } = CameraControlsImpl;
 
 declare global {
   interface Window {
-    __view?: { azimuth: number; polar: number; distance: number; target: [number, number, number] };
+    __view?: { azimuth: number; polar: number; distance: number; target: [number, number, number]; flying: boolean; lastFlightMs: number };
   }
 }
 
@@ -61,7 +62,7 @@ export function FlyToSelection() {
       p.request = flyRequest;
       p.tries = 120;
     }
-    if (p.tries <= 0) return;
+    if (p.tries <= 0 || useCamera.getState().flying) return;
     const api = useCamera.getState().api;
     if (!api) return;
     if (!selected || selected.kind === 'site') {
@@ -78,13 +79,32 @@ export function FlyToSelection() {
   return null;
 }
 
-/** Drag = pan, wheel = zoom, rotation only through the HUD buttons in 90° steps. */
+/** Site-to-site flight (spec 5.1, 8: 1–1.5 s ease-in-out), arcing this far above both ends. */
+const FLIGHT = { ms: motionTokens.cameraFlyMs, lift: 160 };
+const easeInOut = (k: number) => (k < 0.5 ? 4 * k * k * k : 1 - (-2 * k + 2) ** 3 / 2);
+
+interface Flight {
+  start: number;
+  fromPos: Vec3;
+  fromTarget: Vec3;
+  toPos: Vec3;
+  toTarget: Vec3;
+  done: () => void;
+}
+
+/**
+ * Drag = pan, wheel = zoom, rotation only through the HUD buttons in 90° steps. Switching site
+ * flies the camera over the map to the new site; reduced motion jumps instead.
+ */
 export function CameraRig({ center }: { center: Vec3 }) {
   const ref = useRef<CameraControlsImpl>(null);
   const reduced = useReducedMotion() ?? false;
   const register = useCamera((s) => s.register);
   const camera = useThree((s) => s.camera);
   const size = useThree((s) => s.size);
+  const flight = useRef<Flight | null>(null);
+  const lastFlightMs = useRef(0);
+  const first = useRef(true);
 
   useEffect(() => {
     const { width: w, height: h } = size;
@@ -97,10 +117,38 @@ export function CameraRig({ center }: { center: Vec3 }) {
     const c = ref.current;
     if (!c) return;
     const target: Vec3 = [center[0] + VIEW.targetOffset[0], center[1] + VIEW.targetOffset[1], center[2] + VIEW.targetOffset[2]];
-    const e = VIEW.panHalfExtent;
-    c.setBoundary(new Box3(new Vector3(target[0] - e, -10, target[2] - e), new Vector3(target[0] + e, 20, target[2] + e)));
-    void c.setLookAt(...homePosition(target, VIEW.azimuthDefault, VIEW.polarDefault, VIEW.distanceDefault), ...target, false);
-    c.saveState();
+    const goal = homePosition(target, VIEW.azimuthDefault, VIEW.polarDefault, VIEW.distanceDefault);
+    const settle = () => {
+      const e = VIEW.panHalfExtent;
+      c.maxDistance = VIEW.distanceMax;
+      c.minPolarAngle = VIEW.polarMin;
+      c.maxPolarAngle = VIEW.polarMax;
+      c.setBoundary(new Box3(new Vector3(target[0] - e, -10, target[2] - e), new Vector3(target[0] + e, 20, target[2] + e)));
+      void c.setLookAt(...goal, ...target, false);
+      c.saveState();
+      useCamera.setState({ flying: false });
+    };
+
+    if (first.current || reduced) {
+      // First view, or reduced motion: no flight (spec 6: reduced motion turns camera flights off).
+      first.current = false;
+      settle();
+    } else {
+      // Free the controls for the flight (no boundary, wide limits); settle() restores them.
+      c.setBoundary(undefined);
+      c.maxDistance = VIEW.distanceMax * 4;
+      c.minPolarAngle = 0;
+      c.maxPolarAngle = Math.PI / 2;
+      useCamera.setState({ flying: true });
+      flight.current = {
+        start: performance.now(),
+        fromPos: camera.position.toArray() as Vec3,
+        fromTarget: c.getTarget(scratch).toArray() as Vec3,
+        toPos: goal,
+        toTarget: target,
+        done: settle,
+      };
+    }
 
     const animate = !reduced;
     register({
@@ -115,13 +163,36 @@ export function CameraRig({ center }: { center: Vec3 }) {
       },
     });
     return () => register(null);
-  }, [center, reduced, register]);
+  }, [center, reduced, register, camera]);
 
   useFrame(() => {
     const c = ref.current;
     if (!c) return;
+    const f = flight.current;
+    if (f) {
+      const elapsed = performance.now() - f.start;
+      const k = Math.min(1, elapsed / FLIGHT.ms);
+      const e = easeInOut(k);
+      // Quadratic arc: rise, glide over the map, then descend onto the new site.
+      const mid: Vec3 = [(f.fromPos[0] + f.toPos[0]) / 2, Math.max(f.fromPos[1], f.toPos[1]) + FLIGHT.lift, (f.fromPos[2] + f.toPos[2]) / 2];
+      const pos = [0, 1, 2].map((i) => (1 - e) ** 2 * f.fromPos[i]! + 2 * (1 - e) * e * mid[i]! + e * e * f.toPos[i]!) as Vec3;
+      const tgt = [0, 1, 2].map((i) => f.fromTarget[i]! + (f.toTarget[i]! - f.fromTarget[i]!) * e) as Vec3;
+      void c.setLookAt(...pos, ...tgt, false);
+      if (k >= 1) {
+        flight.current = null;
+        lastFlightMs.current = elapsed;
+        f.done();
+      }
+    }
     const t = c.getTarget(scratch);
-    window.__view = { azimuth: c.azimuthAngle, polar: c.polarAngle, distance: c.distance, target: [t.x, t.y, t.z] };
+    window.__view = {
+      azimuth: c.azimuthAngle,
+      polar: c.polarAngle,
+      distance: c.distance,
+      target: [t.x, t.y, t.z],
+      flying: useCamera.getState().flying,
+      lastFlightMs: lastFlightMs.current,
+    };
   });
 
   return (

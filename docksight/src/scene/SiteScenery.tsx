@@ -3,16 +3,15 @@
 // the simulation parks trucks.
 
 import { useMemo } from 'react';
-import { BoxGeometry, CylinderGeometry, ExtrudeGeometry, IcosahedronGeometry, PlaneGeometry, Shape } from 'three';
-import { add, type Vec3 } from '../sim/geometry';
+import { BoxGeometry, CylinderGeometry, ExtrudeGeometry, IcosahedronGeometry, MeshLambertMaterial, PlaneGeometry, Shape, SphereGeometry } from 'three';
 import { DOCK_REAR_GAP, ROAD_Z, TRUCK_LENGTH } from '../sim/layout';
 import { createRng } from '../sim/rng';
 import type { Site } from '../sim/types';
 import { Instanced, type Placement } from './Instanced';
+import { layoutOf } from './layouts';
 import { mat } from './palette';
 
-// Local frame (see sim/layout.ts): warehouse front wall on z = 0 facing +z.
-export const WAREHOUSE = { x0: -35, x1: 35, z0: -30, z1: 0, height: 10 };
+// Local frame (see sim/layout.ts): warehouse front wall on z = 0 facing +z; size per layout.
 const YARD = { x0: -58, x1: 58, z0: -36, z1: 29 };
 const GATE_GAP = { x0: -56, x1: -44 };
 const ROAD_HALF_WIDTH = 4;
@@ -35,7 +34,6 @@ function Slab({ from, to, y, material, name }: { from: [number, number]; to: [nu
 function Grounds() {
   return (
     <group>
-      <Slab name="ground" from={[-600, -600]} to={[600, 600]} y={-0.02} material={mat.ground} />
       <Slab from={[-300, ROAD_Z + ROAD_HALF_WIDTH]} to={[300, ROAD_Z + ROAD_HALF_WIDTH + 3]} y={-0.01} material={mat.grass} />
       <Slab from={[-300, YARD.z1]} to={[300, ROAD_Z - ROAD_HALF_WIDTH]} y={-0.01} material={mat.grass} />
       <Slab from={[YARD.x0, YARD.z0]} to={[YARD.x1, YARD.z1]} y={0} material={mat.yard} />
@@ -142,9 +140,22 @@ function gableRoof(length: number, halfDepth: number, rise: number) {
   return g;
 }
 
-/** Long shed with ribbed white walls, a low blue gable roof and dark-blue dock door frames. */
+/** Shared extras: glass bands, rooftop fans, silos, frame beams. */
+const glassBlue = new MeshLambertMaterial({ color: '#7fa7ee', transparent: true, opacity: 0.85, flatShading: true });
+const glassCyan = new MeshLambertMaterial({ color: '#8fd6e6', transparent: true, opacity: 0.85, flatShading: true });
+const fanGeo = new CylinderGeometry(0.9, 0.9, 0.5, 12);
+const siloGeo = new CylinderGeometry(2.6, 2.6, 14, 16).translate(0, 7, 0);
+const siloCap = new SphereGeometry(2.6, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2).translate(0, 14, 0);
+const DOOR_PITCH = 8;
+
+/**
+ * Warehouse shaped by its layout (spec 7.1): ribbed white walls, blue roof (gable or flat),
+ * dark-blue dock door frames at every working dock, and the per-site extras.
+ */
 function Warehouse({ site }: { site: Site }) {
-  const { x0, x1, z0, z1, height: h } = WAREHOUSE;
+  const L = layoutOf(site.layout);
+  const { x0, x1, z0, height: h } = L;
+  const z1 = 0;
   const w = x1 - x0;
   const d = z1 - z0;
   const ribs = useMemo<Placement[]>(() => {
@@ -158,30 +169,83 @@ function Warehouse({ site }: { site: Site }) {
       out.push({ pos: [x1 + 0.06, h / 2, z], scale: [0.12, h, 0.35] });
     }
     return out;
-  }, [x0, x1, z0, z1, h]);
+  }, [x0, x1, z0, h]);
   const doors = useMemo(() => site.docks.map((dk) => dk.pos[0] - site.worldPos[0]), [site]);
-  const roof = useMemo(() => gableRoof(w + 1.6, d / 2 + 0.8, 2.6), [w, d]);
+  // Closed doors continue the row outward on both sides (WH-02 shows more than eight).
+  const closedDoors = useMemo(() => {
+    const out: number[] = [];
+    const lo = Math.min(...doors);
+    const hi = Math.max(...doors);
+    for (let i = 1; out.length < L.extraDoors; i++) {
+      for (const x of [hi + i * DOOR_PITCH, lo - i * DOOR_PITCH]) if (x > x0 + 3 && x < x1 - 3 && out.length < L.extraDoors) out.push(x);
+      if (i > 12) break;
+    }
+    return out;
+  }, [doors, L.extraDoors, x0, x1]);
+  const roof = useMemo(() => (L.roof === 'gable' ? gableRoof(w + 1.6, d / 2 + 0.8, 2.6) : null), [L.roof, w, d]);
+  const fans = useMemo<Placement[]>(() => {
+    if (!L.fans) return [];
+    const out: Placement[] = [];
+    for (let x = x0 + 6; x < x1 - 4; x += 5) for (const z of [z0 + 7, z0 + 12]) out.push({ pos: [x, h + 0.85, z] });
+    return out;
+  }, [L.fans, x0, x1, z0, h]);
+  const frame = useMemo<Placement[]>(() => {
+    if (!L.frame) return [];
+    const t = 0.7;
+    const zc = (z0 + z1) / 2;
+    return [
+      ...[x0, x1].flatMap((x) => [z0, z1].map((z): Placement => ({ pos: [x, h / 2, z], scale: [t, h + 0.2, t] }))),
+      ...[z0, z1].map((z): Placement => ({ pos: [0, h, z], scale: [w + t, t, t] })),
+      ...[x0, x1].map((x): Placement => ({ pos: [x, h, zc], scale: [t, t, d + t] })),
+    ];
+  }, [L.frame, x0, x1, z0, h, w, d]);
+  const glass = L.glass === 'cyan' ? glassCyan : L.glass === 'blue' ? glassBlue : null;
+  const doorScale = L.frame ? 1.25 : 1; // the automated DC has four large doors
+
   return (
     <group>
       <mesh geometry={unitBox} material={mat.wall} position={[0, h / 2, (z0 + z1) / 2]} scale={[w, h, d]} castShadow receiveShadow />
       <Instanced name="wall-ribs" geometry={unitBox} material={mat.wallRib} placements={ribs} castShadow={false} />
-      <mesh geometry={roof} material={mat.roof} position={[0, h, (z0 + z1) / 2]} castShadow />
+      {roof ? (
+        <mesh geometry={roof} material={mat.roof} position={[0, h, (z0 + z1) / 2]} castShadow />
+      ) : (
+        <mesh geometry={unitBox} material={L.frame ? mat.wall : mat.roof} position={[0, h + 0.3, (z0 + z1) / 2]} scale={[w + 1.2, 0.6, d + 1.2]} castShadow />
+      )}
+      {glass && <mesh geometry={unitBox} material={glass} position={[0, h - 2.2, z1 + 0.2]} scale={[w - 2, 2.4, 0.2]} />}
+      {fans.length > 0 && <Instanced name="roof-fans" geometry={fanGeo} material={mat.doorShadow} placements={fans} />}
+      {frame.length > 0 && <Instanced name="frame-beams" geometry={unitBox} material={mat.roof} placements={frame} />}
+      {L.silos &&
+        [0, 1].map((i) => (
+          <group key={i} position={[x1 + 8, 0, z0 + 8 + i * 7]}>
+            <mesh geometry={siloGeo} material={mat.wall} castShadow />
+            <mesh geometry={siloCap} material={mat.wall} />
+          </group>
+        ))}
       {doors.map((x) => (
-        <group key={x} position={[x, 0, z1]}>
+        <group key={x} position={[x, 0, z1]} scale={[doorScale, doorScale, 1]}>
           <mesh geometry={unitBox} material={mat.doorFrame} position={[0, 2.6, 0.15]} scale={[4.6, 5.2, 0.3]} castShadow />
           <mesh geometry={unitBox} material={mat.doorShadow} position={[0, 2.35, 0.32]} scale={[3.8, 4.5, 0.05]} />
           <mesh geometry={unitBox} material={mat.curb} position={[0, 0.06, 0.6]} scale={[4.2, 0.12, 1.2]} receiveShadow />
         </group>
       ))}
+      {closedDoors.map((x) => (
+        <group key={`c${x}`} position={[x, 0, z1]}>
+          <mesh geometry={unitBox} material={mat.doorFrame} position={[0, 2.6, 0.15]} scale={[4.6, 5.2, 0.3]} />
+          <mesh geometry={unitBox} material={mat.wallRib} position={[0, 2.35, 0.32]} scale={[3.8, 4.5, 0.05]} />
+        </group>
+      ))}
+      {/* Side door the forklifts use to reach the racking (sim/layout rackDoor), on non-depot sites. */}
+      {!L.racks && (
+        <mesh geometry={unitBox} material={mat.doorFrame} position={[x0 - 0.15, 2.3, -3]} scale={[0.3, 4.6, 4]} />
+      )}
     </group>
   );
 }
 
-export function SiteScenery({ site }: { site: Site }) {
-  const origin: Vec3 = add(site.worldPos, [0, 0, 0]);
+export function SiteScenery({ site, visible = true }: { site: Site; visible?: boolean }) {
   const seed = Number(site.id.replace(/\D/g, '')) * 7919;
   return (
-    <group name={`site:${site.id}`} position={origin}>
+    <group name={`site:${site.id}`} position={site.worldPos} visible={visible}>
       <Grounds />
       <RoadMarkings />
       <BayLines site={site} />

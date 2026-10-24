@@ -8,6 +8,7 @@ import { RACK_ROWS_X, RACK_Z } from '../sim/layout';
 import { createRng } from '../sim/rng';
 import type { Site } from '../sim/types';
 import { Instanced, type Placement } from './Instanced';
+import { layoutOf } from './layouts';
 import { mat } from './palette';
 
 const unitBox = new BoxGeometry(1, 1, 1);
@@ -119,13 +120,14 @@ function Containers() {
   );
 }
 
-export function YardProps({ site }: { site: Site }) {
+export function YardProps({ site, visible = true }: { site: Site; visible?: boolean }) {
   const seed = Number(site.id.replace(/\D/g, '')) * 104729;
+  const L = layoutOf(site.layout);
   return (
-    <group name={`yard-props:${site.id}`} position={site.worldPos}>
-      <Racks seed={seed} />
+    <group name={`yard-props:${site.id}`} position={site.worldPos} visible={visible}>
+      {L.racks && <Racks seed={seed} />}
       <Chargers site={site} />
-      <Containers />
+      {L.containers && <Containers />}
     </group>
   );
 }

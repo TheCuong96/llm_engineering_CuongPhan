@@ -1,21 +1,25 @@
 import { Canvas } from '@react-three/fiber';
+import { PlaneGeometry } from 'three';
 import { useSim, viewSite } from '../store/sim';
 import { CameraRig, FlyToSelection } from './CameraRig';
 import { Forklifts } from './Forklifts';
 import { HitAreas } from './HitAreas';
 import { Overlays } from './Overlays';
-import { sceneColor } from './palette';
+import { mat, sceneColor } from './palette';
 import { Pallets } from './Pallets';
 import { PerfProbe } from './PerfProbe';
 import { SiteScenery } from './SiteScenery';
 import { Trucks } from './Trucks';
 import { YardProps } from './YardProps';
 
+const mapGround = new PlaneGeometry(6000, 6000).rotateX(-Math.PI / 2);
+
 export const MAX_DPR = 1.5; // spec P2 budget
 
 /** Full-screen scene root (spec 5). Sits under every HUD panel. */
 export function World() {
   const site = useSim(viewSite);
+  const sites = useSim((s) => s.world.sites);
   const c = site.worldPos;
 
   return (
@@ -49,12 +53,19 @@ export function World() {
         <object3D attach="target" position={c} />
       </directionalLight>
 
-      <SiteScenery site={site} />
-      <YardProps site={site} />
+      {/* Shared ground under every site: flights between sites pass over land, not a void. */}
+      <mesh name="map-ground" geometry={mapGround} material={mat.ground} position={[700, -0.02, 300]} receiveShadow />
+      {/* All five dioramas stay mounted; switching only flips visibility (no rebuild, no GPU churn). */}
+      {sites.map((s) => (
+        <SiteScenery key={s.id} site={s} visible={s.id === site.id} />
+      ))}
+      {sites.map((s) => (
+        <YardProps key={s.id} site={s} visible={s.id === site.id} />
+      ))}
       <Trucks siteId={site.id} />
       <Forklifts siteId={site.id} />
       <Pallets siteId={site.id} />
-      <HitAreas site={site} />
+      <HitAreas key={site.id} site={site} />
       <Overlays />
       <CameraRig center={c} />
       <FlyToSelection />

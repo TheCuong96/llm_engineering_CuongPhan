@@ -3,6 +3,7 @@ import { Crosshair, Maximize2, Minimize2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Chip, Eyebrow, Field, IconButton, Panel, ProgressBar, Tile } from '../design/primitives';
 import { useSelection, type Sel } from '../store/selection';
+import { useSim } from '../store/sim';
 import { useSimTick } from './hooks';
 import { InventoryIcon } from './icons';
 import { cardFor, type CardVM } from './viewModels';
@@ -29,6 +30,8 @@ export function DetailPanel() {
   if (live) last.current = live;
   const card = live ?? (last.current && last.current.sel.id === sel.id ? last.current : null);
   const gone = !live && card ? GONE : card?.departed;
+  // A transfer on the highway can be followed: view its destination site and wait for it there.
+  const followTo = sel.kind === 'truck' ? world.trucks.get(sel.id)?.destSiteId : undefined;
 
   // The map controls hug the panel's left edge through the same variable, so they move with it.
   useEffect(() => {
@@ -70,7 +73,7 @@ export function DetailPanel() {
               <header className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <Eyebrow>{card.eyebrow}</Eyebrow>
-                  <h2 className="mt-1 truncate text-title leading-snug font-bold">{card.title}</h2>
+                  <h2 className="mt-1 line-clamp-2 text-title leading-snug font-bold">{card.title}</h2>
                   <p className="truncate text-[13px] text-ink-muted">{card.subtitle}</p>
                 </div>
                 <div className="flex shrink-0 gap-0.5">
@@ -87,8 +90,20 @@ export function DetailPanel() {
               </header>
 
               {gone && (
-                <div data-departed className="mt-3 rounded-tile bg-chip-neutral-bg px-3 py-2 text-[12px] font-medium text-chip-neutral-text">
-                  {gone}
+                <div className="mt-3 flex items-center justify-between gap-2 rounded-tile bg-chip-neutral-bg px-3 py-2">
+                  <span data-departed className="min-w-0 truncate text-[12px] font-medium text-chip-neutral-text">
+                    {gone}
+                  </span>
+                  {followTo && (
+                    <button
+                      type="button"
+                      data-follow={followTo}
+                      onClick={() => useSim.setState({ viewSiteId: followTo })}
+                      className="shrink-0 rounded-full bg-accent px-3 py-0.5 text-[12px] font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                    >
+                      Follow
+                    </button>
+                  )}
                 </div>
               )}
 

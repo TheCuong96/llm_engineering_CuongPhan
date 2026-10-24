@@ -28,7 +28,7 @@ export function startSimLoop(): () => void {
       const fresh = Math.min(world.log.seq - seq, world.log.events.length);
       for (let i = world.log.events.length - fresh; i < world.log.events.length; i++) {
         const type = world.log.events[i]!.type;
-        if (type === 'truck_spawned' || type === 'truck_removed') rosterChanged = true;
+        if (type === 'truck_spawned' || type === 'truck_removed' || type === 'truck_rehomed') rosterChanged = true;
       }
       seq = world.log.seq;
       const hud = sinceHud >= HUD_REFRESH_S;

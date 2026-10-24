@@ -61,8 +61,13 @@ function dockRows(world: World, siteId: string): Row[] {
     };
   });
   for (const t of world.trucks.values()) {
-    if (t.siteId !== siteId || t.dockId || (t.state !== 'en_route' && t.state !== 'at_gate')) continue;
-    rows.push({ key: t.id, dot: liveryDot(world, t), title: 'Inbound', subtitle: `${t.id} · ${carrierName(world, t)}`, chip: truckChip(t), metric: truckMetric(world, t), target: { kind: 'truck', id: t.id } });
+    if (t.siteId === siteId && !t.dockId && (t.state === 'en_route' || t.state === 'at_gate')) {
+      rows.push({ key: t.id, dot: liveryDot(world, t), title: 'Inbound', subtitle: `${t.id} · ${carrierName(world, t)}`, chip: truckChip(t), metric: truckMetric(world, t), target: { kind: 'truck', id: t.id } });
+    } else if (t.destSiteId === siteId && t.state === 'in_transit') {
+      // A transfer from another site, still on the highway (spec 7.4).
+      const mins = minutesFrom(Math.max(0, (t.eta ?? world.t) - world.t));
+      rows.push({ key: t.id, dot: liveryDot(world, t), title: 'Inbound', subtitle: `${t.id} · from ${t.homeSiteId}`, chip: truckChip(t), metric: `${mins} min`, target: { kind: 'truck', id: t.id } });
+    }
   }
   return rows;
 }
@@ -107,18 +112,18 @@ export function FleetBoard() {
     >
       <Tabs.Root value={tab} onValueChange={(v) => setTab(v as Tab)} className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between gap-2">
-          <Tabs.List aria-label="Fleet board" className="flex gap-1.5">
+          <Tabs.List aria-label="Fleet board" className="flex shrink-0 gap-1.5">
             {(['docks', 'forklifts', 'trucks'] as Tab[]).map((t) => (
               <Tabs.Trigger
                 key={t}
                 value={t}
-                className="rounded-full px-3 py-1 text-[12.5px] font-semibold text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-accent data-[state=active]:bg-accent data-[state=active]:text-white"
+                className="rounded-full px-3 py-1 text-[12.5px] font-semibold whitespace-nowrap text-ink-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-accent data-[state=active]:bg-accent data-[state=active]:text-white"
               >
                 {TAB_LABEL[t]} <span className="ml-0.5 tabular-nums opacity-80">{counters[t]}</span>
               </Tabs.Trigger>
             ))}
           </Tabs.List>
-          <span className="truncate text-[12px] text-ink-muted">{world.sites.find((s) => s.id === viewSiteId)?.name}</span>
+          <span className="min-w-0 truncate text-[12px] text-ink-muted">{world.sites.find((s) => s.id === viewSiteId)?.name}</span>
         </div>
         <AnimatePresence mode="wait" initial={false}>
           <motion.div

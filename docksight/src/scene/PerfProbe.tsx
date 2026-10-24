@@ -12,6 +12,8 @@ declare global {
     __named?: (prefix: string) => string[];
     /** GPU resources currently held by the renderer. */
     __glMemory?: () => { geometries: number; textures: number };
+    __visible?: (name: string) => boolean;
+    __sceneObjects?: () => number;
     __perf?: { fps: number; frames: number; dpr: number; renderer: string; calls: number; triangles: number };
   }
 }
@@ -33,6 +35,19 @@ export function PerfProbe() {
     return out;
   };
   window.__glMemory = () => ({ ...gl.info.memory });
+  /** Scene graph size, for leak checks (objects should not pile up across site switches). */
+  window.__sceneObjects = () => {
+    let n = 0;
+    scene.traverse(() => void n++);
+    return n;
+  };
+  /** Whether a named object and all its ancestors are visible (only the viewed site should be). */
+  window.__visible = (name) => {
+    let o = scene.getObjectByName(name) ?? null;
+    if (!o) return false;
+    for (; o; o = o.parent) if (!o.visible) return false;
+    return true;
+  };
   window.__project = ([x, y, z]) => {
     const v = new Vector3(x, y, z).project(camera);
     return { x: size.left + ((v.x + 1) / 2) * size.width, y: size.top + ((1 - v.y) / 2) * size.height };

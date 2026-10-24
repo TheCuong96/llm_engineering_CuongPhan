@@ -1,11 +1,23 @@
 // Truck lifecycle (spec 7.3):
 //   inbound:  en_route → at_gate → docking → unloading → departing → (leaves the map)
 //   outbound: en_route → at_gate → docking → loading → departing → in_transit → delivered
+//   transfer: an outbound truck whose destination is another site; on arrival it becomes that
+//             site's inbound truck (en_route from the map edge) under a new shipment (spec 7.4).
 // Docks: available → reserved (truck checked in at the gate) → occupied (backed in) → available.
 
 import { distance, motionDone, motionPos, startMotion, type Vec3 } from './geometry';
 import type { Rng } from './rng';
-import { createPallet, emit, getSite, markShipmentStep, setDockState, setTruckState, type World } from './state';
+import {
+  createPallet,
+  emit,
+  getSite,
+  markShipmentStep,
+  setDockState,
+  setTruckState,
+  sharedSkus,
+  siteDistanceKm,
+  type World,
+} from './state';
 import type { Direction, Shipment, Site, Truck } from './types';
 import {
   CARGO_CAPACITY,
@@ -17,6 +29,7 @@ import {
   HANDLING_EST_S_PER_PALLET,
   HIGHWAY_KMH,
   ROAD_KMH,
+  TRANSFER_SHARE,
   YARD_KMH,
 } from './tuning';
 
@@ -37,7 +50,7 @@ function plate(rng: Rng): string {
   return `${letters}-${rng.int(1000, 9999)}`;
 }
 
-export function spawnTruck(world: World, site: Site, direction: Direction, pallets?: number): Truck {
+export function spawnTruck(world: World, site: Site, direction: Direction, pallets?: number, destSiteId?: string): Truck {
   const { rng } = world;
   world.counters.truck += rng.int(1, 9);
   world.counters.shipment += rng.int(1, 40);
@@ -57,6 +70,7 @@ export function spawnTruck(world: World, site: Site, direction: Direction, palle
     state: 'en_route',
     direction,
     shipmentId,
+    destSiteId: direction === 'outbound' ? destSiteId : undefined,
     pos: start,
     cargo: { pallets: 0, capacity: CARGO_CAPACITY, weightKg: 0 },
     speedKmh: ROAD_KMH,
@@ -80,10 +94,13 @@ export function spawnTruck(world: World, site: Site, direction: Direction, palle
   return truck;
 }
 
+/** Builds the truck's shipment: to a customer, to another site (transfer), or into this site (inbound). */
 function newShipment(world: World, site: Site, truck: Truck, n: number): Shipment {
   const outbound = truck.direction === 'outbound';
-  const customer = outbound ? world.rng.pick(world.customers) : undefined;
-  const transitS = customer ? (customer.distanceKm / HIGHWAY_KMH) * 3600 : 0;
+  const dest = truck.destSiteId ? getSite(world, truck.destSiteId) : undefined;
+  const customer = outbound && !dest ? world.rng.pick(world.customers) : undefined;
+  const km = dest ? siteDistanceKm(world, site.id, dest.id) : (customer?.distanceKm ?? 0);
+  const transitS = outbound ? (km / HIGHWAY_KMH) * 3600 : 0;
   const estimate =
     (truck.motion?.duration ?? 0) +
     (GATE_CHECKIN_S[0] + GATE_CHECKIN_S[1]) / 2 +
@@ -93,10 +110,11 @@ function newShipment(world: World, site: Site, truck: Truck, n: number): Shipmen
   const shipment: Shipment = {
     id: truck.shipmentId,
     siteId: site.id,
-    customer: customer?.name ?? site.name,
-    destination: customer?.city ?? site.address,
+    customer: dest?.name ?? customer?.name ?? site.name,
+    destination: dest ? `${dest.id} · ${dest.name}` : (customer?.city ?? site.address),
     truckId: truck.id,
     direction: truck.direction,
+    destSiteId: dest?.id,
     steps: [{ key: 'confirmed' }, { key: 'picked' }, { key: 'handling' }, { key: 'in_transit' }, { key: 'delivered' }],
     dueAt: world.t + estimate * DUE_SLACK,
     late: false,
@@ -105,9 +123,39 @@ function newShipment(world: World, site: Site, truck: Truck, n: number): Shipmen
   return shipment;
 }
 
+/** Highway time for a shipment: to another site (distance table) or to a customer. */
 export function transitSeconds(world: World, shipment: Shipment): number {
-  const km = world.customers.find((c) => c.name === shipment.customer)?.distanceKm ?? 40;
+  const km = shipment.destSiteId
+    ? siteDistanceKm(world, shipment.siteId, shipment.destSiteId)
+    : (world.customers.find((c) => c.name === shipment.customer)?.distanceKm ?? 40);
   return (km / HIGHWAY_KMH) * 3600;
+}
+
+/**
+ * A transfer reached its destination: its outbound shipment is delivered there, and the same
+ * truck appears at the destination's map edge as its inbound truck under a fresh shipment.
+ */
+function rehome(world: World, truck: Truck): void {
+  const from = truck.homeSiteId;
+  const dest = getSite(world, truck.destSiteId!);
+  world.shipments.delete(truck.shipmentId);
+  world.counters.shipment += world.rng.int(1, 40);
+  truck.shipmentId = `#SHP-${world.counters.shipment}`;
+  truck.homeSiteId = dest.id;
+  truck.siteId = dest.id;
+  truck.direction = 'inbound';
+  truck.destSiteId = undefined;
+  truck.eta = undefined;
+  truck.pos = [...dest.geometry.approachFrom];
+  drive(world, truck, dest.geometry.gate, ROAD_KMH);
+  truck.handling = { target: truck.cargo.pallets, done: 0, assigned: 0 };
+  for (const p of world.pallets.values()) {
+    if (p.location.kind === 'truck' && p.location.ref === truck.id) p.siteId = dest.id;
+  }
+  const shipment = newShipment(world, dest, truck, truck.cargo.pallets);
+  emit(world, 'truck_rehomed', dest.id, truck.id, { from, to: dest.id, shipmentId: shipment.id });
+  markShipmentStep(world, shipment, 'confirmed');
+  setTruckState(world, truck, 'en_route');
 }
 
 export function shipmentOf(world: World, truck: Truck): Shipment {
@@ -202,6 +250,10 @@ export function updateTrucks(world: World): void {
       case 'in_transit':
         if (truck.eta !== undefined && t >= truck.eta) {
           completeShipment(world, truck);
+          if (truck.destSiteId) {
+            rehome(world, truck);
+            break;
+          }
           truck.speedKmh = 0;
           truck.eta = t + DELIVERED_LINGER_S;
           setTruckState(world, truck, 'delivered');
@@ -230,7 +282,13 @@ export function maybeSpawn(world: World, site: Site): void {
   let active = 0;
   for (const tr of world.trucks.values()) if (tr.homeSiteId === site.id && tr.siteId !== null) active++;
   if (active >= site.docks.length + EXTRA_TRUCKS_PER_SITE) return;
-  spawnTruck(world, site, world.rng.next() < site.outboundShare ? 'outbound' : 'inbound');
+  const direction = world.rng.next() < site.outboundShare ? 'outbound' : 'inbound';
+  let dest: string | undefined;
+  if (direction === 'outbound' && world.rng.next() < TRANSFER_SHARE) {
+    const options = world.sites.filter((s) => s.id !== site.id && sharedSkus(site, s).length > 0);
+    if (options.length) dest = world.rng.pick(options).id;
+  }
+  spawnTruck(world, site, direction, undefined, dest);
 }
 
 export function checkLateShipments(world: World): void {

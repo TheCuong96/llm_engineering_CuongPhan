@@ -141,6 +141,28 @@ test('screenshot selection overlays (frame + chip, route, dock plate, departed c
   await page.screenshot({ path: `evidence/${phase}/departed-1440x900.png` });
 });
 
+test('screenshot every site, and the camera mid-flight between two', async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await page.waitForFunction(() => (window.__perf?.frames ?? 0) > 3, null, { timeout: 30_000 });
+  // Let every site get some traffic first, then freeze so the shots are steady.
+  await page.evaluate(() => window.__sim!().clock.setSpeed(60));
+  await page.waitForTimeout(4000);
+  await page.evaluate(() => window.__sim!().clock.setSpeed(1));
+  for (const id of ['WH-02', 'WH-03', 'WH-04', 'WH-05', 'WH-01']) {
+    await page.getByRole('button', { name: /choose site/ }).click();
+    await page.locator(`[data-site-option="${id}"]`).click();
+    if (id === 'WH-03') {
+      await page.waitForTimeout(600);
+      await page.screenshot({ path: `evidence/${phase}/flight-midway-1440x900.png` });
+    }
+    await page.waitForFunction(() => window.__view?.flying === false, null, { timeout: 10_000 });
+    await page.waitForTimeout(1200);
+    await page.screenshot({ path: `evidence/${phase}/site-${id}-1440x900.png` });
+  }
+});
+
 test('screenshot rotated 90°', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');

@@ -14,6 +14,7 @@ import {
   putIntoInventory,
   setForkliftState,
   setPalletState,
+  sharedSkus,
   slotPos,
   takeFromInventory,
   type World,
@@ -192,11 +193,14 @@ export function updateForklifts(world: World): void {
 
 // --- dispatch -------------------------------------------------------------
 
-function sourcePalletForLoading(world: World, site: Site): Pallet | undefined {
+function sourcePalletForLoading(world: World, site: Site, tr: Truck): Pallet | undefined {
+  // A transfer only carries what the destination keeps a line for, so it can be stored there.
+  const allowed = tr.destSiteId ? new Set(sharedSkus(site, getSite(world, tr.destSiteId))) : null;
+  const ok = (sku: string) => !allowed || allowed.has(sku);
   for (const p of world.pallets.values()) {
-    if (p.siteId === site.id && p.state === 'staged' && !p.reservedBy) return p;
+    if (p.siteId === site.id && p.state === 'staged' && !p.reservedBy && ok(p.sku)) return p;
   }
-  const item = [...site.inventory].filter((i) => i.qty > 0).sort((a, b) => b.qty - a.qty)[0];
+  const item = [...site.inventory].filter((i) => i.qty > 0 && ok(i.sku)).sort((a, b) => b.qty - a.qty)[0];
   if (!item || !takeFromInventory(world, site, item.sku)) return undefined;
   return createPallet(world, site.id, item.sku, 'in_rack', { kind: 'slot', ref: 'rack' });
 }
@@ -219,7 +223,7 @@ export function dispatchForklifts(world: World): void {
     for (const tr of world.trucks.values()) {
       if (tr.siteId !== site.id || (tr.state !== 'loading' && tr.state !== 'unloading')) continue;
       while (idle.length > 0 && tr.handling.done + tr.handling.assigned < tr.handling.target) {
-        const p = tr.state === 'unloading' ? nextPalletOnTruck(world, tr) : sourcePalletForLoading(world, site);
+        const p = tr.state === 'unloading' ? nextPalletOnTruck(world, tr) : sourcePalletForLoading(world, site, tr);
         if (!p) {
           // Nothing left to move (stock ran dry): close out with what is aboard.
           tr.handling.target = tr.handling.done + tr.handling.assigned;

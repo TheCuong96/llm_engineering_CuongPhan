@@ -11,6 +11,8 @@ export const DELIVERED_LINGER_S = 60;
 export const EXTRA_TRUCKS_PER_SITE = 2;
 export const DUE_SLACK = 1.3;
 export const HANDLING_EST_S_PER_PALLET = 60;
+/** Share of outbound shipments that go to another site instead of a customer (spec 7.4). */
+export const TRANSFER_SHARE = 0.35;
 
 export const BATTERY_LOW = 20; // %, only checked while idle (spec 7.3)
 export const BATTERY_CHARGED = 95;

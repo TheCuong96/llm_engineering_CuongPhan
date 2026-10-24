@@ -104,6 +104,8 @@ export interface Truck {
   direction: Direction;
   dockId?: string;
   shipmentId: string;
+  /** Set on outbound transfers to another site; the truck becomes that site's inbound truck on arrival. */
+  destSiteId?: string;
   pos: Vec3;
   route?: Vec3[];
   cargo: { pallets: number; capacity: number; weightKg: number };
@@ -163,6 +165,7 @@ export interface Shipment {
   destination: string;
   truckId: string;
   direction: Direction;
+  destSiteId?: string;
   steps: { key: ShipmentStepKey; at?: number; eta?: number }[];
   dueAt: number;
   late: boolean;
