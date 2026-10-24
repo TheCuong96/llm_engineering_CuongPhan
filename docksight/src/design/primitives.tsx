@@ -9,6 +9,7 @@ const chipTone: Record<Tone, string> = {
   neutral: 'bg-chip-neutral-bg text-chip-neutral-text',
 };
 
+/** Status colour lives only on chips and progress bars (spec rule 5); info bars use the accent. */
 const barTone: Record<Tone, string> = {
   success: 'bg-success-bar',
   warning: 'bg-warning-bar',
@@ -29,31 +30,83 @@ export function Panel({ className = '', children, ...rest }: ComponentPropsWitho
 }
 
 export function Eyebrow({ children }: { children: ReactNode }) {
-  return <div className="text-eyebrow font-semibold tracking-[0.08em] text-accent uppercase">{children}</div>;
+  return <div className="truncate text-eyebrow font-semibold tracking-[0.08em] text-accent uppercase">{children}</div>;
 }
 
-export function Chip({ tone, children }: { tone: Tone; children: ReactNode }) {
+export function Chip({ tone, children, className = '' }: { tone: Tone; children: ReactNode; className?: string }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-chip font-semibold ${chipTone[tone]}`}>
+    <span
+      data-chip={tone}
+      className={`inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-chip font-semibold whitespace-nowrap ${chipTone[tone]} ${className}`}
+    >
       {children}
     </span>
   );
 }
 
-export function Tile({ label, children }: { label: string; children: ReactNode }) {
+export function Tile({ label, value, children }: { label: string; value?: ReactNode; children?: ReactNode }) {
   return (
     <div className="rounded-tile bg-tile p-3">
       <div className="text-eyebrow text-ink-muted">{label}</div>
-      {children}
+      {value !== undefined && <div className="mt-0.5 text-[17px] font-bold tabular-nums">{value}</div>}
+      {children && <div className="mt-2">{children}</div>}
     </div>
   );
 }
 
-export function ProgressBar({ value, tone = 'info' }: { value: number; tone?: Tone }) {
+export function ProgressBar({ value, tone = 'info', label }: { value: number; tone?: Tone; label?: string }) {
   const pct = Math.max(0, Math.min(1, value)) * 100;
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-line" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
-      <div className={`h-full rounded-full ${barTone[tone]}`} style={{ width: `${pct}%` }} />
+    <div
+      className="h-1.5 w-full overflow-hidden rounded-full bg-line"
+      role="progressbar"
+      aria-label={label}
+      aria-valuenow={Math.round(pct)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      data-bar={tone}
+    >
+      <div className={`h-full rounded-full transition-[width] duration-300 ${barTone[tone]}`} style={{ width: `${pct}%` }} />
     </div>
+  );
+}
+
+/** One label/value row of a detail card. */
+export function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 py-1.5 text-[13px]">
+      <dt className="shrink-0 text-ink-muted">{label}</dt>
+      <dd className="min-w-0 truncate text-right font-medium tabular-nums">{children}</dd>
+    </div>
+  );
+}
+
+export function IconButton({
+  label,
+  children,
+  onClick,
+  disabled,
+  pressed,
+  className = '',
+}: {
+  label: string;
+  children: ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  pressed?: boolean;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      aria-pressed={pressed}
+      disabled={disabled}
+      onClick={onClick}
+      className={`grid size-8 place-items-center rounded-full text-ink-muted hover:bg-tile hover:text-ink focus-visible:outline-2 focus-visible:outline-accent disabled:opacity-40 disabled:hover:bg-transparent ${className}`}
+    >
+      {children}
+    </button>
   );
 }

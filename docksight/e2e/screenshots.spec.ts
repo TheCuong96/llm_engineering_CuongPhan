@@ -48,6 +48,50 @@ test('screenshot live activity at the docks', async ({ page }) => {
   await page.screenshot({ path: `evidence/${phase}/activity-1440x900.png` });
 });
 
+test('screenshot detail variants, search and notifications', async ({ page }) => {
+  test.setTimeout(150_000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await page.waitForFunction(() => (window.__perf?.frames ?? 0) > 3, null, { timeout: 30_000 });
+  await page.evaluate(() => window.__sim!().clock.setSpeed(60));
+  await page.waitForFunction(
+    () => [...window.__sim!().world.trucks.values()].some((t) => t.siteId === 'WH-01' && t.state === 'loading' && t.cargo.pallets >= 2),
+    null,
+    { timeout: 120_000 },
+  );
+  await page.evaluate(() => window.__sim!().clock.setSpeed(1));
+  const shot = (name: string) => page.screenshot({ path: `evidence/${phase}/${name}-1440x900.png` });
+  const pick = async (sel: { kind: string; id: string }) => {
+    await page.evaluate((s) => window.__selection!().select(s as never), sel);
+    await page.waitForTimeout(500);
+  };
+
+  const truck = await page.evaluate(() => [...window.__sim!().world.trucks.values()].find((t) => t.siteId === 'WH-01' && t.state === 'loading')!.id);
+  await page.getByRole('tab', { name: /Trucks/ }).click();
+  await page.locator(`[data-tab="trucks"] [data-row="${truck}"]`).click();
+  await page.waitForTimeout(500);
+  await shot('detail-truck');
+  await page.getByRole('tab', { name: /Forklifts/ }).click();
+  await pick({ kind: 'forklift', id: 'FL-01' });
+  await shot('detail-forklift');
+  await pick({ kind: 'pallet', id: 'PAL-1026' });
+  await shot('detail-pallet');
+  await pick({ kind: 'charger', id: 'WH-01/C1' });
+  await shot('detail-charger');
+  await page.getByRole('button', { name: 'Close' }).click();
+  await page.waitForTimeout(400);
+  await shot('detail-site');
+
+  await page.keyboard.press('/');
+  await page.keyboard.type('trk');
+  await page.waitForTimeout(300);
+  await shot('search');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: /Notifications/ }).click();
+  await page.waitForTimeout(300);
+  await shot('notifications');
+});
+
 test('screenshot rotated 90°', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
