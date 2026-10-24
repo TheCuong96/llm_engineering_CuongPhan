@@ -27,6 +27,27 @@ test('screenshot close-up after zooming in', async ({ page }) => {
   await page.screenshot({ path: `evidence/${phase}/closeup-1440x900.png` });
 });
 
+test('screenshot live activity at the docks', async ({ page }) => {
+  test.setTimeout(150_000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await page.waitForFunction(() => (window.__perf?.frames ?? 0) > 3, null, { timeout: 30_000 });
+  await page.evaluate(() => window.__sim!().clock.setSpeed(60));
+  await page.waitForFunction(
+    () => {
+      const { world } = window.__sim!();
+      const busy = [...world.trucks.values()].some((t) => t.siteId === 'WH-01' && (t.state === 'loading' || t.state === 'unloading'));
+      return busy && [...world.forklifts.values()].some((f) => f.carrying);
+    },
+    null,
+    { timeout: 120_000 },
+  );
+  await page.evaluate(() => window.__sim!().clock.setSpeed(1));
+  for (let i = 0; i < 2; i++) await page.click('[data-map-action="zoom-in"]');
+  await page.waitForTimeout(2500);
+  await page.screenshot({ path: `evidence/${phase}/activity-1440x900.png` });
+});
+
 test('screenshot rotated 90°', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');

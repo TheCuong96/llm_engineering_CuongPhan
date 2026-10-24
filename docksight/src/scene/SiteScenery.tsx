@@ -5,7 +5,7 @@
 import { useMemo } from 'react';
 import { BoxGeometry, CylinderGeometry, ExtrudeGeometry, IcosahedronGeometry, PlaneGeometry, Shape } from 'three';
 import { add, type Vec3 } from '../sim/geometry';
-import { DOCK_DEPTH, ROAD_Z } from '../sim/layout';
+import { DOCK_REAR_GAP, ROAD_Z, TRUCK_LENGTH } from '../sim/layout';
 import { createRng } from '../sim/rng';
 import type { Site } from '../sim/types';
 import { Instanced, type Placement } from './Instanced';
@@ -59,8 +59,10 @@ function BayLines({ site }: { site: Site }) {
     const out: Placement[] = [];
     for (const d of site.docks) {
       const x = d.pos[0] - site.worldPos[0];
-      for (const dx of [-2.4, 2.4]) out.push({ pos: [x + dx, 0.02, DOCK_DEPTH / 2 + 2], scale: [0.18, 0.02, DOCK_DEPTH + 2] });
-      out.push({ pos: [x, 0.02, DOCK_DEPTH + 3.2], scale: [4.98, 0.02, 0.18] });
+      // Bay box spans the parked truck from the leveller to a metre past its cab.
+      const end = DOCK_REAR_GAP + TRUCK_LENGTH + 1;
+      for (const dx of [-2.4, 2.4]) out.push({ pos: [x + dx, 0.02, (1 + end) / 2], scale: [0.18, 0.02, end - 1] });
+      out.push({ pos: [x, 0.02, end], scale: [4.98, 0.02, 0.18] });
     }
     return out;
   }, [site]);
@@ -168,7 +170,7 @@ function Warehouse({ site }: { site: Site }) {
         <group key={x} position={[x, 0, z1]}>
           <mesh geometry={unitBox} material={mat.doorFrame} position={[0, 2.6, 0.15]} scale={[4.6, 5.2, 0.3]} castShadow />
           <mesh geometry={unitBox} material={mat.doorShadow} position={[0, 2.35, 0.32]} scale={[3.8, 4.5, 0.05]} />
-          <mesh geometry={unitBox} material={mat.curb} position={[0, 0.6, 0.9]} scale={[4.2, 1.2, 1.6]} receiveShadow />
+          <mesh geometry={unitBox} material={mat.curb} position={[0, 0.06, 0.6]} scale={[4.2, 0.12, 1.2]} receiveShadow />
         </group>
       ))}
     </group>

@@ -31,7 +31,7 @@ export interface Dock {
   direction: 'in' | 'out';
   state: DockState;
   truckId?: string;
-  /** Where a docked truck's rear sits. */
+  /** Where a docked truck's centre sits (rear against the leveller). */
   pos: Vec3;
   /** Floor point at the door where forklifts pick up and drop off. */
   apron: Vec3;

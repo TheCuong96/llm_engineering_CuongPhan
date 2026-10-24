@@ -4,7 +4,7 @@ import { TICK_DT } from './clock';
 import type { WorldConfig } from './config';
 import { EventLog } from './events';
 import { dispatchForklifts, updateForklifts } from './forklifts';
-import { buildGeometry, chargerLocalPositions, DOCK_DEPTH, dockLocalX, toWorld } from './layout';
+import { APRON_Z, buildGeometry, chargerLocalPositions, DOCK_DEPTH, dockLocalX, toWorld } from './layout';
 import { createRng } from './rng';
 import { createPallet, type World } from './state';
 import { checkLateShipments, maybeSpawn, updateTrucks } from './trucks';
@@ -48,7 +48,7 @@ export function createWorld(config: WorldConfig): World {
         direction: d.direction,
         state: 'available',
         pos: toWorld(preset, [xs[i]!, 0, DOCK_DEPTH]),
-        apron: toWorld(preset, [xs[i]!, 0, 2]),
+        apron: toWorld(preset, [xs[i]!, 0, APRON_Z]),
       })),
       chargers: preset.chargers.map((c, i) => ({
         ...c,
@@ -78,14 +78,14 @@ export function createWorld(config: WorldConfig): World {
       createPallet(world, site.id, sku, 'staged', { kind: 'slot', ref: `yard-${i}` });
     });
 
-    preset.forklifts.forEach((fp, i) => {
-      const home = site.geometry.home;
+    preset.forklifts.forEach((fp) => {
+      // Every forklift starts on the home point; the renderer lines idle ones up side by side.
       const fl: Forklift = {
         ...fp,
         siteId: site.id,
         state: 'idle',
         movesToday: 0,
-        pos: [home[0] + (i % 3) * 2.5, home[1], home[2] + Math.floor(i / 3) * 2.5],
+        pos: [...site.geometry.home],
       };
       world.forklifts.set(fl.id, fl);
     });

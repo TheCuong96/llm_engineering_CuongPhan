@@ -1,9 +1,13 @@
 import { Canvas } from '@react-three/fiber';
 import { useSim, viewSite } from '../store/sim';
 import { CameraRig } from './CameraRig';
+import { Forklifts } from './Forklifts';
 import { sceneColor } from './palette';
+import { Pallets } from './Pallets';
 import { PerfProbe } from './PerfProbe';
 import { SiteScenery } from './SiteScenery';
+import { Trucks } from './Trucks';
+import { YardProps } from './YardProps';
 
 export const MAX_DPR = 1.5; // spec P2 budget
 
@@ -44,6 +48,10 @@ export function World() {
       </directionalLight>
 
       <SiteScenery site={site} />
+      <YardProps site={site} />
+      <Trucks siteId={site.id} />
+      <Forklifts siteId={site.id} />
+      <Pallets siteId={site.id} />
       <CameraRig center={c} />
       <PerfProbe />
     </Canvas>

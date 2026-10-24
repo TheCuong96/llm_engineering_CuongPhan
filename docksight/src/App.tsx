@@ -1,5 +1,6 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Hud } from './hud/Hud';
+import { startSimLoop } from './store/simLoop';
 
 // three.js, R3F and drei load in their own chunk while the HUD shell paints first.
 const World = lazy(() => import('./scene/World').then((m) => ({ default: m.World })));
@@ -7,6 +8,7 @@ const World = lazy(() => import('./scene/World').then((m) => ({ default: m.World
 const showPerf = new URLSearchParams(location.search).has('perf');
 
 export function App() {
+  useEffect(() => startSimLoop(), []);
   return (
     <main className="relative h-full w-full overflow-hidden">
       {/* C. Scene layer, under every HUD region. The ground colour shows until the canvas paints. */}

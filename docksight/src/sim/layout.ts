@@ -9,8 +9,18 @@ import type { SitePreset } from './config';
 import type { SiteGeometry } from './types';
 
 export const DOCK_SPACING = 8;
-export const DOCK_DEPTH = 14; // door → parked trailer rear
+export const TRUCK_LENGTH = 13.5; // cab + trailer, bumper to bumper
+/** Trailer rear stops this far from the wall, just past the dock leveller. */
+export const DOCK_REAR_GAP = 2.4;
+/** Wall → centre of a docked truck; trucks are positioned by their centre. */
+export const DOCK_DEPTH = DOCK_REAR_GAP + TRUCK_LENGTH / 2;
+/** Wall → where a forklift stands to reach into a docked trailer. */
+export const APRON_Z = 1.2;
 export const ROAD_Z = 34;
+/** Outdoor pallet racking: two rows west of the warehouse with an aisle between them. */
+export const RACK_AISLE_X = -51;
+export const RACK_ROWS_X = [-54.2, -47.8];
+export const RACK_Z: [number, number] = [-30, -7];
 const APPROACH_DISTANCE = 260;
 
 export const toWorld = (preset: SitePreset, local: Vec3): Vec3 => add(preset.worldPos, local);
@@ -32,7 +42,7 @@ export function buildGeometry(preset: SitePreset): SiteGeometry {
     gate: w([-50, 0, ROAD_Z - 6]),
     approachFrom: w([-APPROACH_DISTANCE, 0, ROAD_Z]),
     exitTo: w([APPROACH_DISTANCE, 0, ROAD_Z]),
-    rackDoor: w([-20, 0, 1]),
+    rackDoor: w([RACK_AISLE_X, 0, -3]), // mouth of the aisle between the two rack rows
     home: w([34, 0, 6]),
     yardSlots,
   };
