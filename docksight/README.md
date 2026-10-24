@@ -15,6 +15,7 @@ Giao diện vận hành 3D kiểu game chiến thuật (digital twin) cho mạng
 | Primitive | @radix-ui/react-tabs · popover · tooltip | 1.2.1 · 1.3.1 · 1.4.1 |
 | Chuyển động | framer-motion | 14.6.0 |
 | Icon · font | lucide-react · @fontsource-variable/inter | 1.61.0 · 5.3.0 |
+| Camera | camera-controls (qua drei `CameraControls`) | 3.1.2 |
 | Build | vite · @vitejs/plugin-react · typescript | 8.3.5 · 6.1.2 · 5.9.3 |
 | Test | vitest · @playwright/test | 5.0.5 · 1.64.1 |
 
@@ -27,6 +28,7 @@ npm run dev               # http://localhost:5173
 npm run build             # tsc + vite build
 npm test                  # vitest (engine, tokens)
 npm run e2e               # playwright, tự chạy preview ở :4174
+PERF=1 PHASE=P2 npx playwright test e2e/perf.spec.ts   # đo FPS headed trên GPU thật
 PHASE=P0 npm run shots    # chụp bằng chứng vào evidence/P0
 ```
 
