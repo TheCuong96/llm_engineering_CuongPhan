@@ -1,0 +1,92 @@
+@import 'tailwindcss';
+
+/* Fonts (spec §8, §12). The per-weight files declare unicode-range per subset, so the
+   browser only fetches latin + vietnamese; the single-subset files omit unicode-range. */
+@import '@fontsource/noto-serif/600.css';
+@import '@fontsource/noto-serif/700.css';
+@import '@fontsource/be-vietnam-pro/400.css';
+@import '@fontsource/be-vietnam-pro/500.css';
+@import '@fontsource/be-vietnam-pro/600.css';
+
+/* Mirrors src/design/tokens.ts (kept in sync by tokens.test.ts). */
+@theme {
+  --color-ground-paper: #f6f2e9;
+  --color-cloud-top: #ffffff;
+  --color-cloud-low: #ece8f4;
+  --color-mist: #dcd6ea;
+
+  --color-accent: #6d4ae0;
+  --color-accent-ink: #5536c4;
+  --color-accent-tint: #eee9fc;
+
+  --color-success-bar: #1f9d6b;
+  --color-success-ink: #116b4a;
+  --color-success-bg: #ddf3e9;
+  --color-warning-bar: #d98e1c;
+  --color-warning-ink: #9a5b00;
+  --color-warning-bg: #fcebcb;
+  --color-danger-ink: #b23a26;
+  --color-danger-bg: #fbe2dc;
+  --color-neutral-ink: #55506a;
+  --color-neutral-bg: #eeedf2;
+
+  --color-ink: #1f1b2e;
+  --color-ink-muted: #6b6680;
+  --color-hud: #fbf8f2;
+
+  --font-serif: 'Noto Serif', Georgia, serif;
+  --font-sans: 'Be Vietnam Pro', system-ui, sans-serif;
+
+  --text-eyebrow: 11px;
+  --text-chip: 12px;
+  --radius-card: 18px;
+  --radius-tile: 12px;
+}
+
+:root {
+  --hud-top: 64px;
+  --hud-gap: 16px;
+  --hud-bottom-h: 280px;
+  --ease-panel: 250ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-ink);
+  background: linear-gradient(180deg, var(--color-cloud-top) 0%, var(--color-cloud-low) 100%);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .hud-panel {
+    background: color-mix(in srgb, var(--color-hud) 88%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid color-mix(in srgb, var(--color-accent) 14%, transparent);
+    border-radius: var(--radius-card);
+    box-shadow: 0 8px 28px -12px color-mix(in srgb, var(--color-accent) 30%, transparent);
+  }
+  .eyebrow {
+    font-size: var(--text-eyebrow);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--color-accent-ink);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ease-panel: 0ms linear;
+  }
+}
